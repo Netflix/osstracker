@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>OSS Tracker</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+    
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.6.0/bootstrap-table.min.css">
+    
+    <link href="css/osstracker.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="index.html">OSS Tracker</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="overall.html">Overall Stats</a></li>
+            <li class="active"><a href="#">Repo Ownership</a></li>
+            <li><a href="perrepopublic.html">Repo Stats (Public)</a></li>
+            <li><a href="perrepoprivate.html">Repo Stats (Private)</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+    <div class="container">
+
+      <div>
+        <h1>&nbsp;</h1>
+        
+        <h1>NetflixOSS Project Ownership</h1>
+        <p class="lead">We track an owning organization for each repository.  Further we track the primary development
+        community leader for every repository as well as the management focal point.</p>
+        <p class="lead">We tracks these owners to ensure all projects are well aligned with our open source strategy
+        which includes promoting healthy projects.</p>
+        
+        <h1>&nbsp;</h1>
+        
+        <table id="table"
+            data-sort-name="name"
+            data-height="600"
+        </table>
+        
+      </div>
+      
+      
+<div class="modal fade" id="clickRepoLinks">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Changing repository information</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="repoModalRepoName">Repository Name</label>
+            <input type="text" class="form-control" id="repoModalRepoName" readonly>
+          </div>
+          <div class="form-group">
+            <label for="repoModalRepoOrg">OSS Area</label>
+            <input type="text" class="form-control typeahead" id="repoModalRepoOrg">
+          </div>
+          <div class="form-group">
+            <label for="repoModalRepoMgrLead">Management Lead</label>
+            <input type="text" class="form-control typeahead" id="repoModalRepoMgrLead">
+          </div>
+          <div class="form-group">
+            <label for="repoModalRepoDevLead">Development Lead</label>
+            <input type="text" class="form-control typeahead" id="repoModalRepoDevLead">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="updateRepository();">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+      
+<div class="modal fade" id="errorModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Error</h4>
+      </div>
+      <div class="modal-body">
+        <p class="lead"><span id="errorModalErrorText"></span></p>
+      </div>
+
+       <div class="_57y3"><input type="text" class="inputtext _55r1" name="github" value=""><a class="_42ft _4jy0 _4jy3 _517h _51sy" role="button" href="https://github.com/login/oauth/authorize?client_id=091f4c3090fe86bf4317" style="margin-left:-1px" target="_self" rel="nofollow" onmouseover="LinkshimAsyncLink.swap(this, &quot;https:\/\/github.com\/login\/oauth\/authorize?client_id=091f4c3090fe86bf4317&quot;);" onclick="LinkshimAsyncLink.referrer_log(this, &quot;https:\/\/github.com\/login\/oauth\/authorize?client_id=091f4c3090fe86bf4317&quot;, &quot;\/si\/ajax\/l\/render_linkshim_log\/?u=https\u00253A\u00252F\u00252Fgithub.com\u00252Flogin\u00252Foauth\u00252Fauthorize\u00253Fclient_id\u00253D091f4c3090fe86bf4317&amp;h=7AQFmVjZ4&amp;render_verification=0&amp;enc&amp;d&quot;);"><img class="prs _3-8_ img" src="https://fbstatic-a.akamaihd.net/rsrc.php/v2/yE/r/r_fNlNSx3Qy.png" width="16" alt="">Autofill form</a></div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>      
+
+    </div>
+    <!-- /.container -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.6.0/bootstrap-table.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.6.0/locale/bootstrap-table-en-US.min.js"></script>
+    <script src="http://twitter.github.io/typeahead.js/releases/latest/typeahead.bundle.js"></script>
+    <script src="js/ownership.js"></script>
+  </body>
+</html>
