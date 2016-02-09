@@ -7,6 +7,8 @@ actively we are maintaining the project and engaging with external users.  At a 
 that are ignoring opened issues and pull requests.  Longer term, we’ll have deeper analysis to compute and take action on
 an aggregate health metric.
 
+[![Apache 2.0](https://img.shields.io/github/license/Netflix/osstracker.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+
 LICENSE
 =======
 
