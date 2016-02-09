@@ -4,5 +4,39 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
+    compile 'org.scala-lang:scala-library:2.11.7'
+    compile 'org.slf4j:slf4j-api:1.7.13'
+    compile 'org.slf4j:slf4j-log4j12:1.7.13'
+    compile 'org.kohsuke:github-api:1.72'
+    compile 'com.typesafe.play:play-json_2.11:2.4.5'
+    compile 'joda-time:joda-time:2.9.1'
+    compile 'org.rogach:scallop_2.11:0.9.5'
+    compile 'com.datastax.cassandra:cassandra-driver-core:3.0.0'
+    compile 'org.apache.httpcomponents:httpclient:4.5.1'
+}
 
+task runScraper(type: JavaExec, dependsOn: classes) {
+    classpath sourceSets.main.runtimeClasspath
+
+    main = 'com.netflix.oss.tools.osstrackerscraper.RunGithubScraper'
+
+    environment = [
+        // You should update with your github OAUTH token
+        "github_oauth" : "1111111111111111111111111111111111111111",
+        // You should update with a a cassandra host and port
+        "CASS_HOST" : CASS_HOST,
+        "CASS_PORT" : "7104",
+        // You should update with an elasticsearch host and port
+        "ES_HOST" : ES_HOST,
+        "ES_PORT" : "7104"
+    ]
+
+    jvmArgs = [
+        //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
+    ]
+
+    args = [
+        //"--action", "updatecassandra",
+        "--action", "updateelasticsearch",
+    ]
 }

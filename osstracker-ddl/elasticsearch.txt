@@ -1,0 +1,22 @@
+elasticsearch index:
+
+GET http://elasticsearchhost:7104/osstracker
+
+Must configure the index first, or queries will fail:
+
+PUT http://elasticsearchhost:7104/osstracker
+
+PUT http://elasticsearchhost:7104/osstracker/_mapping/repo_stats
+
+{
+  "properties": {
+    "repo_name": {
+      "type": "string",
+      "index": "not_analyzed"
+    }
+  }
+}
+
+See the size of the index:
+
+GET http://elasticsearchhostt:7104/osstracker/repo_stats/_count

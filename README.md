@@ -1,7 +1,11 @@
-osstracker
+OSS Tracker
 ==========
 
-[![Apache 2.0](https://img.shields.io/github/license/nebula-plugins/gradle-dependency-lock-plugin.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+OSS Tracker is an application that collects information about an github organization from Github and helps, through various
+visualizations and emails, helps an organization understand how “healthy” each project (repository) is.  By health, we mean how
+actively we are maintaining the project and engaging with external users.  At a high level we’ll start with focusing on projects
+that are ignoring opened issues and pull requests.  Longer term, we’ll have deeper analysis to compute and take action on
+an aggregate health metric.
 
 LICENSE
 =======
