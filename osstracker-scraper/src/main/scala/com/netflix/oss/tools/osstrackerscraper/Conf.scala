@@ -4,7 +4,6 @@ import org.rogach.scallop.ScallopConf
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   val action = opt[String](required = true)
-  val repo = opt[String](required = false)
 }
 
 object Conf {

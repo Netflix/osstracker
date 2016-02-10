@@ -116,8 +116,7 @@ class GithubScraper(githubOrg: String) {
     println(Console.RED + s"remaining calls ${github.getRemainingHourlyRate()}" + Console.RESET)
 
     // get all the known repos from github
-    val githubReposAll = github.getAllRepositoriesForOrg(githubOrg)
-    val githubRepos = githubReposAll.filter(repo => repo.getName.startsWith("a"))
+    val githubRepos = github.getAllRepositoriesForOrg(githubOrg)
 
     logger.debug(s"githubRepos = $githubRepos")
     val githubNames = githubRepos.map(repo => repo.getName)
