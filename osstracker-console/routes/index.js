@@ -6,14 +6,14 @@ var cassandra = require('cassandra-driver');
 var router = express.Router();
 
 var CASS_HOST = process.env.CASS_HOST;
-var CASS_PORT = process.env.CASS_PORT;
+var CASS_PORT = parseInt(process.env.CASS_PORT) || 7104;
 var ES_HOST = process.env.ES_HOST;
-var ES_PORT = process.env.ES_PORT;
+var ES_PORT = parseInt(process.env.ES_PORT) || 7104;
 
 var logger = log4js.getLogger();
 logger.setLevel('INFO');
 var dbClient;
-var esHosts;
+var esBaseUrl = 'http://' + ES_HOST + ':' + ES_PORT;
 
 var SELECT_ALL_FROM_REPO_ORGS = "SELECT * FROM repo_orgs";
 var INSERT_INTO_REPOS = "INSERT INTO repo_info (gh_repo_name, org_short, dev_lead_empid, mgr_lead_empid) VALUES (?, ?, ?, ?)";
@@ -21,7 +21,7 @@ var SELECT_ALL_FROM_REPO_OWNERSHIP = "SELECT * FROM repo_info";
 var SELECT_REPOS_FROM_REPO_OWNERSHIP = "SELECT gh_repo_name FROM repo_info";
 
 router.get('/hosts/eshost', function(req, res, next) {
-    res.send(esHosts[0])
+    res.send(ES_HOST);
 });
 
 //
@@ -243,10 +243,9 @@ router.get('/repos/:repoName/stats', function (req, res) {
 });
 
 function queryAllStats(repoName, callback/*(err, hits)*/) {
-    var esHost = esHosts[0];
     // query to search for a specific repo returning only the last document (date wise)
     var query = { "size": 1, "sort": [{"asOfYYYYMMDD": {"order": "desc"}}]};
-    var url = 'http://' + esHost + ':7104/osstracker/allrepos_stats/_search';
+    var url = esBaseUrl + '/osstracker/allrepos_stats/_search';
     var qArgs = { method: 'POST', uri: url, json: query};
     request(qArgs, function (err, response, body) {
         if (err) {
@@ -269,10 +268,9 @@ function queryAllStats(repoName, callback/*(err, hits)*/) {
 }
 
 function queryLatestStats(callback/*(err, stats)*/) {
-    var esHost = esHosts[0];
     // query to search for a specific repo returning only the last document (date wise)
     var query = { "size": 1, "sort": [{"asOfYYYYMMDD": {"order": "desc"}}]};
-    var url = 'http://' + esHost + ':7104/osstracker/allrepos_stats/_search';
+    var url = esBaseUrl + '/osstracker/allrepos_stats/_search';
 
     var qArgs = { method: 'POST', uri: url, json: query};
     request(qArgs, function (err, response, body) {
@@ -298,7 +296,7 @@ function queryLatestStats(callback/*(err, stats)*/) {
 
 function connectToDataBase(hosts, callback/*(err, dbClient)*/) {
     logger.info("hosts = " + hosts)
-	client = new cassandra.Client({ contactPoints: hosts, protocolOptions : { port : 7104 }, keyspace: 'osstracker'});
+	client = new cassandra.Client({ contactPoints: hosts, protocolOptions : { port : CASS_PORT }, keyspace: 'osstracker'});
 	if (!client) {
 		callback("error connecting to database", null);
 	}
@@ -319,21 +317,14 @@ function getDBClient() {
     });
 }
 
-function getESHosts() {
-    logger.info("es connect hosts " + ES_HOST)
-    esHosts = [ES_HOST];
-}
-
 var waitForDbConnections = setInterval(function () {
-	if (dbClient && esHosts) {
+	if (dbClient) {
 		clearInterval(waitForDbConnections);
 		return;
 	}
-	if (!dbClient) {
+	else {
 	    getDBClient();
 	}
-    if (!esHosts) {
-        getESHosts();
-    }}, 5000);
+}, 5000);
 
 module.exports = router;
