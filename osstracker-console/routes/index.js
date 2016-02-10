@@ -20,16 +20,15 @@ var INSERT_INTO_REPOS = "INSERT INTO repo_info (gh_repo_name, org_short, dev_lea
 var SELECT_ALL_FROM_REPO_OWNERSHIP = "SELECT * FROM repo_info";
 var SELECT_REPOS_FROM_REPO_OWNERSHIP = "SELECT gh_repo_name FROM repo_info";
 
+// returns a single string of what elastic search DNS name should
+// be used in direct links in the console
 router.get('/hosts/eshost', function(req, res, next) {
     res.send(ES_HOST);
 });
 
-//
-// Reponse is JSON list that has repo items with repo name, repo org (short form),
-// netflix ids for manager lead and development lead
-//
-// [ { name: 'somerepo', orgName: 'CPIE', mgrLead: "12345", devLead: "56789" }, ... ]
-//
+// Response is JSON list that has repo items with repo name, repo org (short form),
+// employee ids for manager lead and development lead
+// [ { name: 'somerepo', orgName: 'CRSL', mgrLead: "12345", devLead: "56789" }, ... ]
 router.get('/repos', function(req, res, next) {
     dbClient.execute(SELECT_ALL_FROM_REPO_OWNERSHIP, [], {prepare: true}, function(err, result) {
         if (err) {
@@ -53,35 +52,16 @@ router.get('/repos', function(req, res, next) {
     });
 });
 
-function getRepos(callback/*(repos, err)*/) {
-    dbClient.execute(SELECT_REPOS_FROM_REPO_OWNERSHIP, [], {prepare: true}, function(err, result) {
-        if (err) {
-            logger.debug('error ' + JSON.stringify(err));
-            callback(null, err);
-            return;
-        }
-
-        var repos = [];
-        for (ii = 0; ii < result.rows.length; ii++) {
-            repos.push(result.rows[ii].gh_repo_name);
-        }
-
-        callback(repos);
-    });
-}
-
 //
-// Response is JSON list that has users with
-// [ { employeeId: '123456', githubId: 'githubusername', email: 'user@netflix.com',
-//     name: 'Joe Smith' } ... ]
-//
+// Response is JSON list that has users with name, github id, employee id, and email
+// [ { employeeId: '123456', githubId: 'githubusername', email: 'user@netflix.com', name: 'First Last' }, ... ]
 router.get('/users', function(req, res, next) {
     var fakeResponse = [
         {"employeeId":"111111","githubId":"ghId1","email":"user1@netflix.com","name":"User One"},
         {"employeeId":"222222","githubId":"ghId2","email":"user2@netflix.com","name":"User Two"}
     ];
     res.send(fakeResponse);
-    // TODO: Generalize the below
+    // TODO: Generalize the below to a more pluggable employee whitepages implementation
     //var url = 'some internal whitepages app';
     //var qArgs = { method: 'GET', uri: url};
     //
@@ -115,10 +95,8 @@ router.get('/users', function(req, res, next) {
     //});
 });
 
-//
-// Response is JSON list that has orgs with
-// [ { orgName: 'CPIE', orgDesc: 'Cloud Platform Infrastructure Engineering' } ... ]
-//
+// Response is JSON list that has orgs with long and short name
+// [ {"orgName":"DP","orgDesc":"Data Persistence"} , {"orgName":"BDT","orgDesc":"Build and Delivery Tools"}, ... ]
 router.get('/repos/orgs', function(req, res, next) {
 	dbClient.execute(SELECT_ALL_FROM_REPO_ORGS, [], {prepare: true}, function(err, result) {
 		if (err) {
@@ -139,9 +117,8 @@ router.get('/repos/orgs', function(req, res, next) {
 	});
 });
 
-//
-// Expects repoName, repoOrg, mgrLead (netflixId), devLead (netflixId)
-//
+// Request to update the ownership of a repository
+// Expects repoName, repoOrg, mgrLead (employee id ), devLead (employee id)
 router.post('/repos/:repoName', function(req, res) {
     var repoName = req.params.repoName;
     var repoOrg = req.body.repoOrg;
@@ -162,11 +139,11 @@ router.post('/repos/:repoName', function(req, res) {
 });
 
 //
-//Response is JSON list that has orgs with
-// { lastUpdated: dateOfLastUpdate, repos : [
-//   { repo: 'reponame', metric1: metric1val, metric2: metric2val } ...
-//     ]
-// }
+//Response is JSON list that has repo stats with various feilds of format
+// [ {
+//   "name":"repoName","forks":100,"stars":200,"numContributors":20,"issueOpenCount":10,"issueClosedCount":300,
+//   "issueAvgClose":13,"prOpenCount":8,"prClosedCount":259,"prAvgClose":3,"daysSinceLastCommit":59,"public":true,
+//   "osslifecycle":"active"}, ... ]
 router.get('/repos/stats', function (req, res) {
     queryLatestStats(function(err, allrepos) {
         if (err) {
@@ -200,6 +177,21 @@ router.get('/repos/stats', function (req, res) {
     });
 });
 
+// Response is a single elasticsearch document with the stats from each project
+// format is:
+// {"asOfISO":"2016-02-09T08:18:44Z","asOfYYYYMMDD":"2016-02-09","avgForks":134,"avgStars":599,
+//   "issues":{ "avgOpenCount":39,"avgClosedCount":210,"totalOpenCount":356,"totalClosedCount":1897},
+//   "pullRequests":{"avgOpenCount":8,"avgClosedCount":154,"totalOpenCount":73,"totalClosedCount":1389},
+//   "commits":{},
+//   "repos":[
+//     {"asOfISO":"2016-02-09T08:18:44Z","asOfYYYYMMDD":"2016-02-09","repo_name":"repoName","public":true,
+//      "osslifecycle":"active","forks":172,"stars":821,"numContributors":25,
+//        "issues": {"openCount":68,"closedCount":323,"avgTimeToCloseInDays":13},
+//        "pullRequests":{"openCount":8,"closedCount":259,"avgTimeToCloseInDays":3},
+//        "commits":{"daysSinceLastCommit":59},"contributors":["user", ... ]
+//      }, ...
+//   ]
+// }
 router.get('/repos/overview', function (req, res) {
     queryLatestStats(function(err, allrepos) {
         if (err) {
@@ -208,37 +200,6 @@ router.get('/repos/overview', function (req, res) {
             return;
         }
         res.send(allrepos);
-    });
-});
-
-router.get('/repos/:repoName/stats', function (req, res) {
-    var repoName = req.param('repoName');
-    queryAllStats(repoName, function(err, hits) {
-       if (err) {
-           logger.error("err = " + err);
-           res.status(500).end();
-           return;
-       }
-       var stats = []
-       logger.debug('hits = ' + hits);
-       for (ii = 0; ii < hits.length; ii++) {
-           var stat = {
-               date : hits[ii]._source.asOfSimple,
-               name: hits[ii]._source.repos.name,
-               forks: hits[ii]._source.repos.forks,
-               stars: hits[ii]._source.repos.forks,
-               numContributors: hits[ii]._source.repos.numContributors,
-               issueOpenCount: hits[ii]._source.repos.issues.openCount,
-               issueClosedCount: hits[ii]._source.repos.issues.closedCount,
-               issueAvgClose: hits[ii]._source.repos.issues.avgTimeToCloseInDays,
-               prOpenCount: hits[ii]._source.repos.pullRequests.openCount,
-               prClosedCount: hits[ii]._source.repos.pullRequests.closedCount,
-               prAvgClose: hits[ii]._source.repos.pullRequests.avgTimeToCloseInDays,
-               daysSinceLastCommit: hits[ii]._source.repos.commits.daysSinceLastCommit
-           }
-           stats.push(stat);
-       }
-       res.send(stats);
     });
 });
 
