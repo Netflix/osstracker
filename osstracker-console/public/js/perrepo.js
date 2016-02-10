@@ -100,5 +100,5 @@ function repoLinkFormatter(value, row) {
 
 function esStatsFormatter(value, row) {
     return '<a href="http://' + esHost + ':7001/kibana/#/dashboard/elasticsearch/Netflix%20OSS Per Repo?query=repo_name:' +
-        row['name'] + '">Graph</a>';
+        row['name'] + '"><span class="glyphicon glyphicon-signal"></span></a>';
 }
