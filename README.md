@@ -1,11 +1,26 @@
 OSS Tracker
 ==========
 
-OSS Tracker is an application that collects information about an github organization from Github and helps, through various
-visualizations and emails, helps an organization understand how “healthy” each project (repository) is.  By health, we mean how
-actively we are maintaining the project and engaging with external users.  At a high level we’ll start with focusing on projects
-that are ignoring opened issues and pull requests.  Longer term, we’ll have deeper analysis to compute and take action on
-an aggregate health metric.
+OSS Tracker is an application that collects information about a Github organization and aggregates the data across
+all projects within that organization into a single user interface to be used by various roles within the owning
+organization.
+
+For the community manager, all repositories are listed and metrics are combined for the organization as a whole.  A
+community manager can also organize projects into functional areas and appoint shepherds of these areas to assign
+management and engineering leads.
+
+The shepherds of each functional area can not only assign and maintain leads for each project, but but view
+aggregated metrics for their area.
+
+For individual owners, the OSS tracker gives a daily summary as well as historical information on key repository
+metrics such as open issues and pull requests, days since last commit, and average time to resolve issues and pull
+requests.
+
+OSS Tracker works by running multiple analysis jobs as part of osstracer-scraper periodically.  These jobs populate
+a project ownership database as well as a time series project statistics database.  OSS Tracker when exposes a web
+application (osstracker-console) that gives visibility into these databases as well as access to control ownership
+and categorization of each project.  In order to decrease the need for advanced visualization, much of the time series
+data graphing leverages kibana on top of elasticsearch.
 
 [![Apache 2.0](https://img.shields.io/github/license/Netflix/osstracker.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
