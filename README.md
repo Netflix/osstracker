@@ -9,7 +9,7 @@ For the community manager, all repositories are listed and metrics are combined 
 community manager can also organize projects into functional areas and appoint shepherds of these areas to assign
 management and engineering leads.
 
-The shepherds of each functional area can not only assign and maintain leads for each project, but but view
+The shepherds of each functional area can not only assign and maintain leads for each project, but view
 aggregated metrics for their area.
 
 For individual owners, the OSS tracker gives a daily summary as well as historical information on key repository
