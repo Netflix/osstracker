@@ -9,6 +9,10 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.{Json, JsObject}
 import scala.collection.JavaConversions._
 
+case class CommitInfo(numCommits: Int, daysSinceLastCommit: Int, contributorLogins: List[String]) {}
+case class IssuesInfo(val closedIssuesSize: Int, val avgIssues: Int) {}
+case class PRsInfo(val closedPRsSize: Int, val avgPRs: Int) {}
+
 class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
   val logger = LoggerFactory.getLogger(getClass)
   val github: GitHub = GitHub.connect()
@@ -30,74 +34,55 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
   }
 
   def getRepoStats(repo: GHRepository, cassRepo: RepoInfo) : JsObject = {
-    logger.info(s"repo = ${repo.getName}, forks = ${repo.getForks}, stars = ${repo.getWatchers}")
-    if (repo.getSize == 0) {
-      logger.warn(s"empty repository ${repo.getName}")
-      val repoJson: JsObject = Json.obj(
-        "asOfISO" -> asOfISO,
-        "asOfYYYYMMDD" -> asOfYYYYMMDD,
-        "repo_name" -> repo.getName,
-        "public" -> cassRepo.public,
-        "osslifecycle" -> cassRepo.osslifecycle,
-        "forks" -> repo.getForks(),
-        "stars" -> repo.getWatchers(),
-        "numContributors" -> 0,
-        "issues" -> Json.obj(
-          "openCount" -> 0,
-          "closedCount" -> 0,
-          "avgTimeToCloseInDays" -> 0
-        ),
-        "pullRequests" -> Json.obj(
-          "openCount" -> 0,
-          "closedCount" -> 0,
-          "avgTimeToCloseInDays" -> 0
-        ),
-        "commits" -> Json.obj(
-          "daysSinceLastCommit" -> 0
-        ),
-        "contributors" -> List[String]()
-      )
-      repoJson
-    }
-    else {
-      val openPullRequests = repo.getPullRequests(GHIssueState.OPEN)
-      logger.debug(s"  openIssues = ${repo.getOpenIssueCount()}, openPullRequests = ${openPullRequests.size()}")
+    logger.info(s"repo = ${repo.getName()}, forks = ${repo.getForks}, stars = ${repo.getWatchers}")
 
-      val (numCommits, daysSinceLastCommit, contributorLogins) = commitInfo(repo)
-      val (closedIssuesSize, avgIssues) = getClosedIssuesStats(repo)
-      val (closedPRsSize, avgPRs) = getClosedPullRequestsStats(repo)
+    val openPullRequests = repo.getPullRequests(GHIssueState.OPEN)
+    logger.debug(s"  openIssues = ${repo.getOpenIssueCount()}, openPullRequests = ${openPullRequests.size()}")
 
-      val repoJson: JsObject = Json.obj(
-        "asOfISO" -> asOfISO,
-        "asOfYYYYMMDD" -> asOfYYYYMMDD,
-        "repo_name" -> repo.getName(),
-        "public" -> cassRepo.public,
-        "osslifecycle" -> cassRepo.osslifecycle,
-        "forks" -> repo.getForks(),
-        "stars" -> repo.getWatchers(),
-        "numContributors" -> contributorLogins.length,
-        "issues" -> Json.obj(
-          "openCount" -> repo.getOpenIssueCount(),
-          "closedCount" -> closedIssuesSize,
-          "avgTimeToCloseInDays" -> avgIssues
-        ),
-        "pullRequests" -> Json.obj(
-          "openCount" -> openPullRequests.size(),
-          "closedCount" -> closedPRsSize,
-          "avgTimeToCloseInDays" -> avgPRs
-        ),
-        "commits" -> Json.obj(
-          "daysSinceLastCommit" -> daysSinceLastCommit
-        ),
-        "contributors" -> contributorLogins.toSeq
-      )
-      logger.debug("repo json = " + repoJson)
-      repoJson
+    // Note that in this case, the github-api will crash on calls to listIssues with java.lang.Error
+    // https://github.com/kohsuke/github-api/issues/65
+    var neverPushed = getCloseEnoughForSameDates(repo.getCreatedAt, repo.getPushedAt)
+
+    val (commitInfo: CommitInfo, issuesInfo: IssuesInfo, prsInfo: PRsInfo) = if (neverPushed) {
+      logger.warn("repo has never been pushed, so providing fake zero counts for issues and pull requests")
+      (CommitInfo(0, 0, List[String]()), IssuesInfo(0, 0), PRsInfo(0, 0))
+    } else {
+      val commitInfo = getCommitInfo(repo)
+      val issuesInfo = getClosedIssuesStats(repo)
+      val prsInfo = getClosedPullRequestsStats(repo)
+      (commitInfo, issuesInfo, prsInfo)
     }
+
+    val repoJson: JsObject = Json.obj(
+      "asOfISO" -> asOfISO,
+      "asOfYYYYMMDD" -> asOfYYYYMMDD,
+      "repo_name" -> repo.getName(),
+      "public" -> cassRepo.public,
+      "osslifecycle" -> cassRepo.osslifecycle,
+      "forks" -> repo.getForks(),
+      "stars" -> repo.getWatchers(),
+      "numContributors" -> commitInfo.contributorLogins.size,
+      "issues" -> Json.obj(
+        "openCount" -> repo.getOpenIssueCount(),
+        "closedCount" -> issuesInfo.closedIssuesSize,
+        "avgTimeToCloseInDays" -> issuesInfo.avgIssues
+      ),
+      "pullRequests" -> Json.obj(
+        "openCount" -> openPullRequests.size(),
+        "closedCount" -> prsInfo.closedPRsSize,
+        "avgTimeToCloseInDays" -> prsInfo.avgPRs
+      ),
+      "commits" -> Json.obj(
+        "daysSinceLastCommit" -> commitInfo.daysSinceLastCommit
+      ),
+      "contributors" -> commitInfo.contributorLogins
+    )
+    logger.debug("repo json = " + repoJson)
+    repoJson
   }
 
   // TODO: Is there a faster way to only pull the last commit?
-  def commitInfo(repo: GHRepository) : (Int, Int, List[String]) = {
+  def getCommitInfo(repo: GHRepository) : CommitInfo = {
     val commits = repo.listCommits().asList()
     val orderedCommits = commits.sortBy(_.getCommitShortInfo.getCommitter().getDate())
     val lastCommitDate = orderedCommits(orderedCommits.length - 1).getCommitShortInfo().getCommitter().getDate()
@@ -108,10 +93,10 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     val contributors = commits.filter { commit => Option(commit.getAuthor()).isDefined }
     val contributorLogins = contributors.map(contributor => contributor.getAuthor().getLogin()).distinct
     logger.debug(s"numContribitors = ${contributorLogins.length}, contributorEmails = ${contributorLogins}")
-    (commits.length, daysSinceLastCommit, contributorLogins.toList)
+    CommitInfo(commits.length, daysSinceLastCommit, contributorLogins.toList)
   }
 
-  def getClosedPullRequestsStats(repo: GHRepository) : (Int, Int) = {
+  def getClosedPullRequestsStats(repo: GHRepository) : PRsInfo = {
     val closedPRs = repo.getPullRequests(GHIssueState.CLOSED)
     val timeToClosePR = closedPRs.map(pr => {
       val opened = pr.getCreatedAt()
@@ -125,10 +110,10 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       case _ => sumPRs / timeToClosePR.size
     }
     logger.debug(s"avg days to close ${closedPRs.size()} pull requests = ${avgPRs} days")
-    (closedPRs.size, avgPRs)
+    PRsInfo(closedPRs.size, avgPRs)
   }
 
-  def getClosedIssuesStats(repo: GHRepository) : (Int, Int) = {
+  def getClosedIssuesStats(repo: GHRepository) : IssuesInfo = {
     val closedIssues = repo.getIssues(GHIssueState.CLOSED)
     val timeToCloseIssue = closedIssues.map(issue => {
       val opened = issue.getCreatedAt()
@@ -142,7 +127,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       case _ => sumIssues / timeToCloseIssue.size
     }
     logger.debug(s"avg days to close ${closedIssues.size()} issues = ${avgIssues} days")
-    (closedIssues.size(), avgIssues)
+    IssuesInfo(closedIssues.size(), avgIssues)
   }
 
   def daysBetween(smaller: Date, bigger: Date): Int = {
@@ -158,5 +143,12 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     val org = github.getOrganization(githubOrg)
     val githubRepos = org.listRepositories(100).asList().toList
     githubRepos
+  }
+
+  def getCloseEnoughForSameDates(d1: Date, d2: Date): Boolean = {
+    val d1T = d1.getTime
+    val d2T = d2.getTime
+    val diff = Math.abs(d1T - d2T)
+    return diff < 1000*60; // 60 seconds
   }
 }
