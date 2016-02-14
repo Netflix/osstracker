@@ -22,6 +22,11 @@ application (osstracker-console) that gives visibility into these databases as w
 and categorization of each project.  In order to decrease the need for advanced visualization, much of the time series
 data graphing leverages kibana on top of elasticsearch.
 
+More Info
+=========
+You can see more about OSS Tracker from our meetup [video](https://www.youtube.com/watch?v=5s-SS_aXoi0) and [slides](http://www.slideshare.net/aspyker/netflix-open-source-meetup-season-4-episode-1).
+
+
 [![Apache 2.0](https://img.shields.io/github/license/Netflix/osstracker.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 LICENSE
