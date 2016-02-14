@@ -22,13 +22,13 @@ task runScraper(type: JavaExec, dependsOn: classes) {
 
     environment = [
         // You should update with your github OAUTH token
-        "github_oauth" : "1111111111111111111111111111111111111111",
+        "github_oauth" : project.hasProperty("GITHUB_OAUTH") ? GITHUB_OAUTH : "1111111111111111111111111111111111111111",
         // You should update with a a cassandra host and port
         "CASS_HOST" : CASS_HOST,
-        "CASS_PORT" : "7104",
+        "CASS_PORT" : project.hasProperty("CASS_PORT") ? CASS_PORT : "7104",
         // You should update with an elasticsearch host and port
         "ES_HOST" : ES_HOST,
-        "ES_PORT" : "7104"
+        "ES_PORT" : project.hasProperty("ES_PORT") ? ES_PORT : "7104"
     ]
 
     jvmArgs = [
@@ -37,6 +37,6 @@ task runScraper(type: JavaExec, dependsOn: classes) {
 
     args = [
         //"--action", "updatecassandra",
-        "--action", "updateelasticsearch",
+        "--action", project.hasProperty("ACTION") ? ACTION : "updateelasticsearch",
     ]
 }
