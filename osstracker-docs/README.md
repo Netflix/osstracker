@@ -69,13 +69,13 @@ Create Docker OSS Tracker console image
 
 ```
 cd osstracker-console/
-docker build -t osstracker-console .
+docker build -t netflixoss/osstracker-console .
 ```
 
 Run OSS Tracker console (using docker)
 
 ```
-docker run -d --name osstracker-console -e CASS_HOST=${CASS_HOST} -e CASS_PORT=${CASS_PORT} -e ES_HOST=${ES_HOST} -e ES_PORT=${ES_PORT} -p 3000:3000 osstracker-console
+docker run -d --name osstracker-console -e CASS_HOST=${CASS_HOST} -e CASS_PORT=${CASS_PORT} -e ES_HOST=${ES_HOST} -e ES_PORT=${ES_PORT} -p 3000:3000 netflixoss/osstracker-console
 ```
 
 Enjoy
