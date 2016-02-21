@@ -24,7 +24,12 @@ git clone https://github.com/Netflix/osstracker.git
 Run Cassandra instance (using docker)
 
 ```
+# At start export CASS_HOST that should represent your docker ip
+# linux only
 export CASS_HOST=localhost
+# If you're using docker-machine (Windows/Mac OSX) you should replace by following commented command
+# MacOSX / Windows (with bash)
+# export CASS_HOST=$(docker-machine ip <MACHINE NAME>)
 export CASS_PORT=9042
 docker run -d --name osstracker-cassandra -p ${CASS_PORT}:9042 cassandra
 ```
@@ -38,7 +43,12 @@ docker run -it --link osstracker-cassandra:cassandra -v $(pwd)/osstracker-ddl/:/
 Run ElasticSearch instance (using docker)
 
 ```
+# At start export ES_HOST that should represent your docker ip
+# linux only
 export ES_HOST=localhost
+# If you're using docker-machine (Windows/Mac OSX) you should replace by following commented command
+# MacOSX / Windows (with bash)
+# export ES_HOST=$(docker-machine ip <MACHINE NAME>)
 export ES_PORT=9200
 docker run -d --name osstracker-elasticsearch -p ${ES_PORT}:9200 elasticsearch
 ```
