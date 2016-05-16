@@ -1,7 +1,15 @@
 apply plugin: 'scala'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+    }
+}
 
 dependencies {
     compile 'org.scala-lang:scala-library:2.11.7'
