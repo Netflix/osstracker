@@ -9,7 +9,7 @@ import org.joda.time.{DateTimeZone, DateTime}
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 
-class GithubScraper(githubOrg: String) {
+class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: String, esPort: Int) {
   def logger = LoggerFactory.getLogger(getClass)
   val now = new DateTime().withZone(DateTimeZone.UTC)
   val dtfISO8601 = ISODateTimeFormat.dateTimeNoMillis()
@@ -21,8 +21,8 @@ class GithubScraper(githubOrg: String) {
     val github = new GithubAccess(asOfYYYYMMDD, asOfISO)
     println(Console.RED + s"remaining calls ${github.getRemainingHourlyRate()}" + Console.RESET)
 
-    val cass = new CassandraAccesss()
-    val es = new ElasticSearchAccess()
+    val cass = new CassandraAccesss(cassHost, cassPort)
+    val es = new ElasticSearchAccess(esHost, esPort)
 
     // get all the known repos from cassandra, sorted in case we run out github API calls
     val cassRepos = cass.getAllRepos()
@@ -123,7 +123,7 @@ class GithubScraper(githubOrg: String) {
 
     // get all the known repos from cassandra
     //val cass = injector.getInstance(classOf[CassandraAccess])
-    val cass = new CassandraAccesss()
+    val cass = new CassandraAccesss(cassHost, cassPort)
 
     val cassRepos = cass.getAllRepos()
     logger.debug(s"cassRepos = $cassRepos")
@@ -196,35 +196,4 @@ class GithubScraper(githubOrg: String) {
     true
   }
 
-}
-
-object RunGithubScraper {
-  val logger = LoggerFactory.getLogger(getClass)
-
-  def main(args: Array[String]) {
-    val conf = new Conf(args)
-
-    val action = conf.action()
-
-    if (action == Conf.ACTION_UPDATE_CASSANDRA) {
-      val scraper = new GithubScraper(Conf.GITHUB_ORG)
-      val success = scraper.updateCassandra()
-      if (!success) {
-        System.exit(1)
-      }
-      logger.info(s"successfully updated the cassandra repo infos")
-    }
-    else if (action == Conf.ACTION_UPDATE_ELASTICSEARCH) {
-      val scraper = new GithubScraper(Conf.GITHUB_ORG)
-      val success = scraper.updateElasticSearch()
-      if (!success) {
-        System.exit(1)
-      }
-      logger.info(s"successfully updated the elastic search repo infos")
-    }
-    else {
-      println("you must specify an action")
-      System.exit(1)
-    }
-  }
 }

@@ -14,7 +14,7 @@ class RepoInfo(val name: String, val devLeadId: String, val mgrLeadId: String, v
   override def toString(): String = s"RepoOwnership($githubOrg/$name, $devLeadId, $mgrLeadId, $org, $statsLastUpdate, $public, $githubExists, ${osslifecycle.toString}})";
 }
 
-class CassandraAccesss {
+class CassandraAccesss(cassHost: String, cassPort: Int) {
   val logger = LoggerFactory.getLogger(getClass)
 
   val SELECT_ALL_FROM_REPOS_OWNERSHIP = "SELECT * FROM repo_info"
@@ -24,8 +24,6 @@ class CassandraAccesss {
   val UPDATE_REPOS_INFO_SET_PUBLIC = "UPDATE repo_info SET gh_public = ? WHERE gh_repo_name = ?"
   val UPDATE_REPOS_INFO_SET_LIFECYCLE = "UPDATE repo_info SET osslifecycle = ? WHERE gh_repo_name = ?"
 
-  val cassHost = System.getenv("CASS_HOST")
-  val cassPort = System.getenv("CASS_PORT").toInt
 
   var cluster: Cluster = Cluster.builder().addContactPoint(cassHost).withPort(cassPort).build()
   var session: Session = cluster.connect(Conf.OSSTRACKER_KEYSPACE)

@@ -8,10 +8,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.{Json, JsObject}
 
 
-class ElasticSearchAccess {
+class ElasticSearchAccess(esHost: String, esPort: Int) {
   val logger = LoggerFactory.getLogger(getClass)
-  val esHost = System.getenv("ES_HOST")
-  val esPort = System.getenv("ES_PORT")
 
   def indexDocInES(url: String, jsonDoc: String): Boolean = {
 
