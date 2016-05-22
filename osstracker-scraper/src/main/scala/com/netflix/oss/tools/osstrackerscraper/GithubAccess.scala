@@ -63,7 +63,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       "stars" -> repo.getWatchers(),
       "numContributors" -> commitInfo.contributorLogins.size,
       "issues" -> Json.obj(
-        "openCount" -> repo.getOpenIssueCount(),
+        "openCount" -> issuesInfo.openIssuesSize,
         "closedCount" -> issuesInfo.closedIssuesSize,
         "avgTimeToCloseInDays" -> issuesInfo.avgIssues
       ),
