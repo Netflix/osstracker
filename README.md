@@ -1,6 +1,8 @@
 OSS Tracker
 ==========
 
+[![Build Status](https://travis-ci.org/Netflix/osstracker.svg?branch=master)](https://travis-ci.org/Netflix/osstracker)
+
 OSS Tracker is an application that collects information about a Github organization and aggregates the data across
 all projects within that organization into a single user interface to be used by various roles within the owning
 organization.
