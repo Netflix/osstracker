@@ -1,4 +1,3 @@
 rootProject.name = 'osstracker'
-include 'osstracker-console'
 include 'osstracker-scraper'
 include 'osstracker-scraperapp'
