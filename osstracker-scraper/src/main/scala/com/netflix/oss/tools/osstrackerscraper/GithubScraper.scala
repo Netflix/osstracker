@@ -33,7 +33,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
     val githubRepos = github.getAllRepositoriesForOrg(githubOrg)
     logger.debug(s"githubRepos = $githubRepos")
 
-    val sortedGHRepos: Seq[GHRepository] = cassRepos.map(repo => {
+    val sortedGHRepos: Seq[GHRepository] = cassReposToUpdate.map(repo => {
       githubRepos.find(_.getName == repo.name).get
     })
 
