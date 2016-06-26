@@ -2,9 +2,6 @@ buildscript {
     repositories {
         jcenter()
     }
-    dependencies {
-        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:2.2.0'
-    }
 }
 
 plugins {
@@ -13,7 +10,6 @@ plugins {
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
-    apply plugin: 'nebula.provided-base'
     group = 'com.netflix.oss.tools'
 
     repositories {
