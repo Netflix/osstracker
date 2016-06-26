@@ -14,29 +14,3 @@ dependencies {
     compile 'com.datastax.cassandra:cassandra-driver-core:3.0.0'
     compile 'org.apache.httpcomponents:httpclient:4.5.1'
 }
-
-task runScraper(type: JavaExec, dependsOn: classes) {
-    classpath sourceSets.main.runtimeClasspath
-
-    main = 'com.netflix.oss.tools.osstrackerscraper.RunGithubScraper'
-
-    environment = [
-        // You should update with your github OAUTH token
-        "github_oauth" : "1111111111111111111111111111111111111111",
-        // You should update with a a cassandra host and port
-        "CASS_HOST" : CASS_HOST,
-        "CASS_PORT" : "7104",
-        // You should update with an elasticsearch host and port
-        "ES_HOST" : ES_HOST,
-        "ES_PORT" : "7104"
-    ]
-
-    jvmArgs = [
-        //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
-    ]
-
-    args = [
-        //"--action", "updatecassandra",
-        "--action", "updateelasticsearch",
-    ]
-}

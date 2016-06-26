@@ -10,7 +10,7 @@ import play.api.libs.json.{Json, JsObject}
 import scala.collection.JavaConversions._
 
 case class CommitInfo(numCommits: Int, daysSinceLastCommit: Int, contributorLogins: List[String]) {}
-case class IssuesInfo(val closedIssuesSize: Int, val avgIssues: Int) {}
+case class IssuesInfo(val closedIssuesSize: Int, val openIssuesSize: Int, val avgIssues: Int) {}
 case class PRsInfo(val closedPRsSize: Int, val avgPRs: Int) {}
 
 class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
@@ -45,10 +45,10 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
 
     val (commitInfo: CommitInfo, issuesInfo: IssuesInfo, prsInfo: PRsInfo) = if (neverPushed) {
       logger.warn("repo has never been pushed, so providing fake zero counts for issues and pull requests")
-      (CommitInfo(0, 0, List[String]()), IssuesInfo(0, 0), PRsInfo(0, 0))
+      (CommitInfo(0, 0, List[String]()), IssuesInfo(0, 0, 0), PRsInfo(0, 0))
     } else {
       val commitInfo = getCommitInfo(repo)
-      val issuesInfo = getClosedIssuesStats(repo)
+      val issuesInfo = getIssuesStats(repo)
       val prsInfo = getClosedPullRequestsStats(repo)
       (commitInfo, issuesInfo, prsInfo)
     }
@@ -63,7 +63,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       "stars" -> repo.getWatchers(),
       "numContributors" -> commitInfo.contributorLogins.size,
       "issues" -> Json.obj(
-        "openCount" -> repo.getOpenIssueCount(),
+        "openCount" -> issuesInfo.openIssuesSize,
         "closedCount" -> issuesInfo.closedIssuesSize,
         "avgTimeToCloseInDays" -> issuesInfo.avgIssues
       ),
@@ -113,8 +113,9 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     PRsInfo(closedPRs.size, avgPRs)
   }
 
-  def getClosedIssuesStats(repo: GHRepository) : IssuesInfo = {
-    val closedIssues = repo.getIssues(GHIssueState.CLOSED)
+  def getIssuesStats(repo: GHRepository) : IssuesInfo = {
+    val closedIssues = repo.getIssues(GHIssueState.CLOSED).filter(_.getPullRequest == null)
+    val openIssues = repo.getIssues(GHIssueState.OPEN).filter(_.getPullRequest == null)
     val timeToCloseIssue = closedIssues.map(issue => {
       val opened = issue.getCreatedAt()
       val closed = issue.getClosedAt()
@@ -127,7 +128,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       case _ => sumIssues / timeToCloseIssue.size
     }
     logger.debug(s"avg days to close ${closedIssues.size()} issues = ${avgIssues} days")
-    IssuesInfo(closedIssues.size(), avgIssues)
+    IssuesInfo(closedIssues.size, openIssues.size, avgIssues)
   }
 
   def daysBetween(smaller: Date, bigger: Date): Int = {
