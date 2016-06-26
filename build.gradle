@@ -10,6 +10,7 @@ plugins {
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
+    apply plugin: 'nebula.provided-base'
     group = 'com.netflix.oss.tools'
 
     repositories {
