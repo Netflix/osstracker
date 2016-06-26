@@ -10,6 +10,7 @@ plugins {
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
+    group = 'com.netflix.oss.tools'
 
     repositories {
         jcenter()
