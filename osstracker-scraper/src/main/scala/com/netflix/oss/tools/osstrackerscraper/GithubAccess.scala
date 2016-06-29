@@ -43,6 +43,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     }
     catch {
       case ioe: IOException  => {
+        ioe.printStackTrace()
         OssLifecycle.Unknown
       }
     }

@@ -21,7 +21,7 @@ dependencies {
 task runScraper(type: JavaExec, dependsOn: classes) {
     classpath sourceSets.main.runtimeClasspath
 
-    main = 'com.netflix.oss.tools.osstrackerscraper.RunGithubScraper'
+    main = 'com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper'
 
     environment = [
         // You should update with your github OAUTH token
