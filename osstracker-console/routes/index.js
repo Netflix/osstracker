@@ -6,8 +6,16 @@ var cassandra = require('cassandra-driver');
 var router = express.Router();
 
 var CASS_HOST = process.env.CASS_HOST;
+if (!CASS_HOST) {
+    console.error("CASS_HOST environment variable not defined");
+    process.exit(1);
+}
 var CASS_PORT = parseInt(process.env.CASS_PORT) || 7104;
 var ES_HOST = process.env.ES_HOST;
+if (!ES_HOST) {
+    console.error("ES_HOST environment variable not defined");
+    process.exit(1);
+}
 var ES_PORT = parseInt(process.env.ES_PORT) || 7104;
 
 var logger = log4js.getLogger();
@@ -270,7 +278,7 @@ function connectToDataBase(hosts, callback/*(err, dbClient)*/) {
 function getDBClient() {
     connectToDataBase([CASS_HOST], function(err, client) {
         if (err) {
-            logger.info("could not get database connection, waiting");
+            logger.error("could not get database connection, waiting");
         }
         else {
             dbClient = client;
