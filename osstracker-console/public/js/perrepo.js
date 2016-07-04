@@ -99,6 +99,8 @@ function repoLinkFormatter(value, row) {
 }
 
 function esStatsFormatter(value, row) {
-    return '<a href="http://' + esHost + ':7001/kibana/#/dashboard/elasticsearch/Netflix%20OSS Per Repo?query=repo_name:' +
-        row['name'] + '"><span class="glyphicon glyphicon-signal"></span></a>';
+    return  '<a href="http://' + esHost + ':5601/#/dashboard/OSSTracker-Per-Repo?query:(query_string:(analyze_wildcard:!t,query:\'repo_name:' +
+        row['name'] + '\'))&_a=(filters:!(),query:(query_string:(analyze_wildcard:!t,query:\'repo_name:' +
+        row['name'] + '\')),title:\'OSSTracker%20Per%20Repo\')&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-1y,mode:quick,to:now))' +
+        '"><span class="glyphicon glyphicon-signal"></span></a>';
 }

@@ -12,7 +12,7 @@ $(document).ready(function(){
     $('#totalClosedPRsCountText').text(data.pullRequests.totalClosedCount);
   });
   $.get('/hosts/eshost', function(data) {
-      var hrefLink = 'http://' + data + ':5601/#/dashboard/NetflixOSS-Overall-Stats?_g=(time:(from:now-7d,mode:quick,to:now))'
+      var hrefLink = 'http://' + data + ':5601/#/dashboard/OSSTracker-Overall-Stats?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-7d,mode:quick,to:now))'
       $("a[href='http://replaceme']").attr('href', hrefLink)
   });
 });
