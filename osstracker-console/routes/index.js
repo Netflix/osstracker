@@ -5,6 +5,10 @@ var cassandra = require('cassandra-driver');
 
 var router = express.Router();
 
+var settings = require('../settings.json');
+
+var employeeDirectory = require(settings.employeeDirectory);
+
 var CASS_HOST = process.env.CASS_HOST;
 if (!CASS_HOST) {
     console.error("CASS_HOST environment variable not defined");
@@ -26,7 +30,6 @@ var esBaseUrl = 'http://' + ES_HOST + ':' + ES_PORT;
 var SELECT_ALL_FROM_REPO_ORGS = "SELECT * FROM repo_orgs";
 var INSERT_INTO_REPOS = "INSERT INTO repo_info (gh_repo_name, org_short, dev_lead_empid, mgr_lead_empid) VALUES (?, ?, ?, ?)";
 var SELECT_ALL_FROM_REPO_OWNERSHIP = "SELECT * FROM repo_info";
-var SELECT_REPOS_FROM_REPO_OWNERSHIP = "SELECT gh_repo_name FROM repo_info";
 
 // returns a single string of what elastic search DNS name should
 // be used in direct links in the console
@@ -64,43 +67,13 @@ router.get('/repos', function(req, res, next) {
 // Response is JSON list that has users with name, github id, employee id, and email
 // [ { employeeId: '123456', githubId: 'githubusername', email: 'user@netflix.com', name: 'First Last' }, ... ]
 router.get('/users', function(req, res, next) {
-    var fakeResponse = [
-        {"employeeId":"111111","githubId":"ghId1","email":"user1@netflix.com","name":"User One"},
-        {"employeeId":"222222","githubId":"ghId2","email":"user2@netflix.com","name":"User Two"}
-    ];
-    res.send(fakeResponse);
-    // TODO: Generalize the below to a more pluggable employee whitepages implementation
-    //var url = 'some internal whitepages app';
-    //var qArgs = { method: 'GET', uri: url};
-    //
-    //request(qArgs, function (err, response, body) {
-    //    if (err) {
-    //        logger.error('error = ' + JSON.stringify(err));
-    //        res.status(500).end();
-    //        return;
-    //    }
-    //    else {
-    //        var wpGHUsers;
-    //        try {
-    //            wpGHUsers = JSON.parse(response.body);
-    //        } catch (e) {
-    //            logger.error('error parsing response');
-    //            res.status(500).end();
-    //            return;
-    //        }
-    //        logger.debug('users = ' + JSON.stringify(wpGHUsers));
-    //        var simpleUsers = [];
-    //        for (ii = 0; ii < wpGHUsers.length; ii++) {
-    //            simpleUsers.push({
-    //                employeeId: wpGHUsers[ii].empId,
-    //                githubId: wpGHUsers[ii].empGhId,
-    //                email: wpGHUsers[ii].empEmail,
-    //                name: wpGHUsers[ii].empFirstName + ' ' + wpGHUsers[ii].empLastName
-    //            });
-    //        }
-    //        res.send(simpleUsers);
-    //    }
-    //});
+    employeeDirectory.getGithubIds(function(err, response) {
+        if (err) {
+            logger.error('error = ' + JSON.stringify(err));
+            res.status(500).end();
+        }
+        res.send(response);
+    });
 });
 
 // Response is JSON list that has orgs with long and short name
