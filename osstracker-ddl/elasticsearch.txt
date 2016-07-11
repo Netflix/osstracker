@@ -1,4 +1,4 @@
-elausticsearch index:
+elasticsearch index:
 
 GET http://elasticsearchhost:7104/osstracker
 
