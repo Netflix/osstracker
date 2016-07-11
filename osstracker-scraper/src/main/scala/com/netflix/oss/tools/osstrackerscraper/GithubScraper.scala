@@ -48,8 +48,17 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
     val githubRepos = github.getAllRepositoriesForOrg(githubOrg)
     logger.debug(s"githubRepos = $githubRepos")
 
-    val sortedGHRepos: Seq[GHRepository] = cassReposToUpdate.map(repo => {
-      githubRepos.find(_.getName == repo.name).get
+    val sortedGHRepos: Seq[GHRepository] = cassReposToUpdate.flatMap(repo => {
+      var githubRepo = githubRepos.find(_.getName == repo.name)
+      githubRepo match {
+        case Some(ghRepo) => {
+          Some(ghRepo)
+        }
+        case _ => {
+          logger.error(s"github no longer has the repo ${repo.name}")
+          None
+        }
+      }
     })
 
     val docsList = new ListBuffer[JsObject]()
