@@ -173,26 +173,40 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
     // see what repos we should change public/private in cassandra
     for (repo <- cassReposNow) {
       val cassPublic = repo.public
-      val githubRepo = githubRepos.find(_.getName == repo.name).get
-      val ghPublic = !githubRepo.isPrivate
-      if (cassPublic != ghPublic) {
-        logger.info(s"updating repo ${repo.name} with public = $ghPublic")
-        val success = cass.updateGHPublicForRepo(repo.name, ghPublic)
-        if (!success) {
-          return false
+      val githubRepo = githubRepos.find(_.getName == repo.name)
+      githubRepo match {
+        case Some(ghRepo) => {
+          val ghPublic = !ghRepo.isPrivate
+          if (cassPublic != ghPublic) {
+            logger.info(s"updating repo ${repo.name} with public = $ghPublic")
+            val success = cass.updateGHPublicForRepo(repo.name, ghPublic)
+            if (!success) {
+              return false
+            }
+          }
+        }
+        case _ => {
+          logger.error(s"github no longer has the repo ${repo.name}")
         }
       }
     }
 
     // see what repos have changed OSS Lifecycle
     for (repo <- cassReposNow) {
-      val githubRepo = githubRepos.find(_.getName == repo.name).get
-      val lifecycle = github.getOSSMetaDataOSSLifecycle(githubRepo)
-      if (lifecycle != repo.osslifecycle) {
-        logger.info(s"updating repo ${repo.name} lifecycle from ${repo.osslifecycle} to $lifecycle")
-        val success = cass.updateLifecycleForRepo(repo.name, lifecycle)
-        if (!success) {
-          return false
+      val githubRepo = githubRepos.find(_.getName == repo.name)
+      githubRepo match {
+        case Some(ghRepo) => {
+          val lifecycle = github.getOSSMetaDataOSSLifecycle(ghRepo)
+          if (lifecycle != repo.osslifecycle) {
+            logger.info(s"updating repo ${repo.name} lifecycle from ${repo.osslifecycle} to $lifecycle")
+            val success = cass.updateLifecycleForRepo(repo.name, lifecycle)
+            if (!success) {
+              return false
+            }
+          }
+        }
+        case _ => {
+          logger.error(s"github no longer has the repo ${repo.name}")
         }
       }
     }
