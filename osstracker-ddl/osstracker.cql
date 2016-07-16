@@ -21,5 +21,6 @@ CREATE TABLE repo_info (
   org_short text,
   gh_public boolean,
   osslifecycle text,
-  last_stats_update timestamp
+  db_last_stats_update timestamp,
+  es_last_stats_update timestamp
 );
