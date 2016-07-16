@@ -89,11 +89,11 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
           logger.info(s"skipping up index of repo doc for ${repoName}, ${asOfYYYYMMDD}")
           docsList += alreadyExistsDoc.get
         }
-      }
 
-      val success = cass.markReposLastUpdateDateES(orderToUpdate.toSeq)
-      if (!success) {
-        return false
+        val success = cass.markReposLastUpdateDateES(repoName)
+        if (!success) {
+          return false
+        }
       }
 
       val alreadyExists = !es.getESDocForRepos(asOfYYYYMMDD).isEmpty

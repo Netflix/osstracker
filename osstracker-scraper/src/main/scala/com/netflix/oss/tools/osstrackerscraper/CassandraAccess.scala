@@ -179,24 +179,20 @@ class CassandraAccesss(cassHost: String, cassPort: Int) {
     true
   }
 
-  def markReposLastUpdateDateES(repos: Seq[String]) : Boolean = {
+  def markReposLastUpdateDateES(repoName: String) : Boolean = {
     val now = new Date()
 
-    for (repo <- repos) {
-      try {
-        val statement = new BoundStatement(updateReposToCurrentTimeES)
-        session.execute(statement.bind(
-          now,
-          repo
-        ))
-      }
-      catch {
-        case ex: DriverException => {
-          logger.error("failed to upsert repo", ex)
-          return false
-        }
+    try {
+      val statement = new BoundStatement(updateReposToCurrentTimeES)
+      session.execute(statement.bind(now, repoName))
+    }
+    catch {
+      case ex: DriverException => {
+        logger.error("failed to upsert repo", ex)
+        return false
       }
     }
+
     true
   }
 
