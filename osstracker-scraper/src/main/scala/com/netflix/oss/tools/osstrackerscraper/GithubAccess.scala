@@ -49,7 +49,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     }
   }
 
-  def getRepoStats(repo: GHRepository, cassRepo: RepoInfo) : JsObject = {
+  def getRepoStats(repo: GHRepository, public: Boolean, ossLifecycle: OssLifecycle) : JsObject = {
     logger.info(s"repo = ${repo.getName()}, forks = ${repo.getForks}, stars = ${repo.getWatchers}")
 
     val openPullRequests = repo.getPullRequests(GHIssueState.OPEN)
@@ -73,8 +73,8 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       "asOfISO" -> asOfISO,
       "asOfYYYYMMDD" -> asOfYYYYMMDD,
       "repo_name" -> repo.getName(),
-      "public" -> cassRepo.public,
-      "osslifecycle" -> cassRepo.osslifecycle,
+      "public" -> public,
+      "osslifecycle" -> ossLifecycle,
       "forks" -> repo.getForks(),
       "stars" -> repo.getWatchers(),
       "numContributors" -> commitInfo.contributorLogins.size,

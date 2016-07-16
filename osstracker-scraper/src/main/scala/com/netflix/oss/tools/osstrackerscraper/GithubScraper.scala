@@ -16,12 +16,11 @@
 package com.netflix.oss.tools.osstrackerscraper
 
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
-import org.kohsuke.github.GHRepository
-
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
-import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.{DateTime, DateTimeZone}
 import java.util.Date
+
 import scala.collection.mutable.ListBuffer
 
 class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: String, esPort: Int) {
@@ -41,34 +40,42 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
 
     // get all the known repos from cassandra, sorted in case we run out github API calls
     val cassRepos = cass.getAllRepos()
-    logger.debug(s"cassRepos = $cassRepos")
-    val cassReposToUpdate = cassRepos.sortBy(_.statsLastUpdate)
+    val cassReposNames = cassRepos.map(_.name).toSet
+    logger.debug(s"repos(${cassReposNames.size}) in cass = $cassReposNames")
 
     // get all of the known repos from github
     val githubRepos = github.getAllRepositoriesForOrg(githubOrg)
-    logger.debug(s"githubRepos = $githubRepos")
+    val githubReposNames = githubRepos.map(_.getName).toSet
+    logger.debug(s"repos(${githubReposNames.size}) on GH = $githubReposNames")
 
-    val sortedGHRepos: Seq[GHRepository] = cassReposToUpdate.flatMap(repo => {
-      var githubRepo = githubRepos.find(_.getName == repo.name)
-      githubRepo match {
-        case Some(ghRepo) => {
-          Some(ghRepo)
-        }
-        case _ => {
-          logger.error(s"github no longer has the repo ${repo.name}")
-          None
-        }
-      }
-    })
+    val commonRepoNames = cassReposNames.intersect(githubReposNames)
+    val onlyInCassReposNames = cassReposNames.diff(githubReposNames)
+    val onlyInGHReposNames = githubReposNames.diff(cassReposNames)
+
+    logger.error(s"need to delete the following repos from cassandra - $onlyInCassReposNames")
+    logger.info(s"new repos detected on github that aren't in cassandra - $onlyInGHReposNames")
+
+    val commonReposCassRepos = commonRepoNames.map(name => cassRepos.find(name == _.name).get)
+    val commonReposCassReposOrderByLastUpdate = collection.SortedSet[RepoInfo]()(ESDateOrdering) ++ commonReposCassRepos
+    val commonReposCassReposOrderByLastUpdateNames = commonReposCassReposOrderByLastUpdate.toList.map(_.name)
+
+    val orderToUpdate = commonReposCassReposOrderByLastUpdateNames ++ onlyInGHReposNames
 
     val docsList = new ListBuffer[JsObject]()
+
     // create or validate that ES document exists for each repo
-    for (repo <- sortedGHRepos) {
-      val cassRepo = cassRepos.find(_.name == repo.getName).get
-      val alreadyExistsDoc = es.getESDocForRepo(asOfYYYYMMDD, repo.getName)
+    for (repoName <- orderToUpdate) {
+      val ghRepo = githubRepos.find(_.getName == repoName).get
+      val cassRepo = cassRepos.find(_.name == repoName)
+      val (public, ossLifecycle) = cassRepo match {
+        case Some(repo) => (repo.public, repo.osslifecycle)
+        case _ => (false, OssLifecycle.Unknown)
+      }
+
+      val alreadyExistsDoc = es.getESDocForRepo(asOfYYYYMMDD, repoName)
 
       if (alreadyExistsDoc.isEmpty) {
-        val stat = github.getRepoStats(repo, cassRepo)
+        val stat = github.getRepoStats(ghRepo, public, ossLifecycle)
         val indexed = es.indexDocInES("/osstracker/repo_stats", stat.toString)
         if (!indexed) {
           return false
@@ -76,9 +83,14 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
         docsList += stat
       }
       else {
-        logger.info(s"skipping up index of repo doc for ${repo.getName()}, ${asOfYYYYMMDD}")
+        logger.info(s"skipping up index of repo doc for ${repoName}, ${asOfYYYYMMDD}")
         docsList += alreadyExistsDoc.get
       }
+    }
+
+    val success = cass.markReposLastUpdateDateES(orderToUpdate.toSeq)
+    if (!success) {
+      return false
     }
 
     val alreadyExists = !es.getESDocForRepos(asOfYYYYMMDD).isEmpty
@@ -160,7 +172,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
     val reposToAdd = reposNotInCass.map(repoName => {
       val githubRepo = githubRepos.find(ghRepo => ghRepo.getName == repoName).get
       val repoInfo = new RepoInfo(repoName, Conf.SENTINAL_DEV_LEAD_ID, Conf.SENTINAL_MGR_LEAD_ID,
-        Conf.SENTINAL_ORG, new Date(0), !githubRepo.isPrivate, githubOrg, true, OssLifecycle.Unknown)
+        Conf.SENTINAL_ORG, new Date(0), new Date(0), !githubRepo.isPrivate, githubOrg, true, OssLifecycle.Unknown)
       val success = cass.newRepo(repoInfo)
       if (!success) {
         return false
@@ -222,7 +234,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
 
     // mark all of the repos as last updated now
     logger.info("updating all repos in cassandra for last updated")
-    val success2 = cass.markReposLastUpdateDate(cassReposNow.map(_.name))
+    val success2 = cass.markReposLastUpdateDateDB(cassReposNow.map(_.name))
     if (!success2) {
       return false
     }
