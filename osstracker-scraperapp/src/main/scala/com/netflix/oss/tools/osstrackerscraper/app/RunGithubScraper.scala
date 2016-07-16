@@ -33,7 +33,7 @@ object RunGithubScraper {
     val esPort = System.getenv("ES_PORT").toInt
 
     if (action == Conf.ACTION_UPDATE_CASSANDRA) {
-      val scraper = new GithubScraper(Conf.GITHUB_ORG, cassHost, cassPort, esHost, esPort)
+      val scraper = new GithubScraper(Conf.GITHUB_ORG, cassHost, cassPort, esHost, esPort, ConsoleReportWriter)
       val success = scraper.updateCassandra()
       if (!success) {
         System.exit(1)
@@ -41,7 +41,7 @@ object RunGithubScraper {
       logger.info(s"successfully updated the cassandra repo infos")
     }
     else if (action == Conf.ACTION_UPDATE_ELASTICSEARCH) {
-      val scraper = new GithubScraper(Conf.GITHUB_ORG, cassHost, cassPort, esHost, esPort)
+      val scraper = new GithubScraper(Conf.GITHUB_ORG, cassHost, cassPort, esHost, esPort, ConsoleReportWriter)
       val success = scraper.updateElasticSearch()
       if (!success) {
         System.exit(1)
