@@ -306,7 +306,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
         report.append(s"These repos changed oss lifecycle:\n")
         report.append(s"**************************************************\n")
         for (change <- changedLifecycle) {
-          report.append(s"\t$change._1 went from $change._2 to $change._3\n")
+          report.append(s"\t${change._1} went from ${change._2} to ${change._3}\n")
         }
         report.append("\n")
       }
