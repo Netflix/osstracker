@@ -7,7 +7,7 @@ dependencies {
     compile 'org.scala-lang:scala-library:2.11.7'
     compile 'org.slf4j:slf4j-api:1.7.13'
     compile 'org.slf4j:slf4j-log4j12:1.7.13'
-    compile 'org.kohsuke:github-api:1.76'
+    compile 'org.kohsuke:github-api:1.77'
     compile 'com.typesafe.play:play-json_2.11:2.4.5'
     compile 'joda-time:joda-time:2.9.1'
     compile 'org.rogach:scallop_2.11:0.9.5'
