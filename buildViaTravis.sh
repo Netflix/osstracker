@@ -10,24 +10,6 @@ if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ]; then
   echo -e 'Build Branch with Snapshot => Branch ['$TRAVIS_BRANCH']'
   ./gradlew -Prelease.travisci=true -PbintrayUser="${bintrayUser}" -PbintrayKey="${bintrayKey}" -PsonatypeUsername="${sonatypeUsername}" -PsonatypePassword="${sonatypePassword}" build snapshot
-  if [[ $? -ne 0 ]]; then
-    exit 1
-  fi
-  if [ "$TRAVIS_BRANCH" == "dockerbuilds" ]; then
-    ./gradlew --stacktrace --info :osstracker-scraperapp:shadowJar
-    cd osstracker-scraperapp
-    docker build -t netflixoss/osstracker-scraper:latest .
-    docker images
-    docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
-    docker push netflixoss/osstracker-scraper:latest
-    cd ..
-    cd osstracker-console
-    docker build -t netflixoss/osstracker-console:latest .
-    docker images
-    docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
-    docker push netflixoss/osstracker-console:latest
-    cd ..
-  fi
 
 # Building a release tag
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
