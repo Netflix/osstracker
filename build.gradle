@@ -1,6 +1,11 @@
 buildscript {
     repositories {
         jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'org.apache.ant:ant:1.9.7' // to deal with https://github.com/johnrengelman/shadow/issues/188
     }
 }
 

@@ -1,9 +1,11 @@
 language: java
 jdk:
 - oraclejdk8
-sudo: false
+sudo: true
 install: ./installViaTravis.sh
 script: ./buildViaTravis.sh
+services:
+  - docker
 cache:
   directories:
   - $HOME/.gradle/caches
