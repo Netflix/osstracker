@@ -18,6 +18,13 @@ elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ]; then
     docker images
     docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
     docker push netflixoss/osstracker-scraper:latest
+    cd ..
+    cd osstracker-console
+    docker build -t netflixoss/osstracker-console:latest .
+    docker images
+    docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
+    docker push netflixoss/osstracker-scraper:latest
+    cd ..
   fi
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
   echo -e 'Build Branch for Release => Branch ['$TRAVIS_BRANCH']  Tag ['$TRAVIS_TAG']'
