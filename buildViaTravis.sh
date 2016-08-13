@@ -11,7 +11,6 @@ elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ]; then
     exit 1
   fi
   if [ "$TRAVIS_BRANCH" == "dockerbuilds" ]; then
-    echo -e "should do docker build and push"
     ./gradlew --stacktrace --info :osstracker-scraperapp:shadowJar
     cd osstracker-scraperapp
     docker build -t netflixoss/osstracker-scraper:latest .
@@ -23,7 +22,7 @@ elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ]; then
     docker build -t netflixoss/osstracker-console:latest .
     docker images
     docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
-    docker push netflixoss/osstracker-scraper:latest
+    docker push netflixoss/osstracker-console:latest
     cd ..
   fi
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
