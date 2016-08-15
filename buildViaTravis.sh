@@ -29,15 +29,19 @@ elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
   ./gradlew :osstracker-scraperapp:shadowJar
   cd osstracker-scraperapp
   docker build -t netflixoss/osstracker-scraper:$TRAVIS_TAG .
+  docker tag netflixoss/osstracker-scraper:$TRAVIS_TAG netflixoss/osstracker-scraper:latest
   docker images
   docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
   docker push netflixoss/osstracker-scraper:$TRAVIS_TAG
+  docker push netflixoss/osstracker-scraper:latest
   cd ..
   cd osstracker-console
   docker build -t netflixoss/osstracker-console:$TRAVIS_TAG .
+  docker tag netflixoss/osstracker-console:$TRAVIS_TAG netflixoss/osstracker-console:latest
   docker images
   docker login -u=${dockerhubUsername} -p=${dockerhubPassword}
   docker push netflixoss/osstracker-console:$TRAVIS_TAG
+  docker push netflixoss/osstracker-console:latest
   cd ..
 
 # No a valid build
