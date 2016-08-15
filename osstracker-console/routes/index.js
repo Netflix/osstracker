@@ -43,7 +43,7 @@ router.get('/hosts/eshost', function(req, res, next) {
 router.get('/repos', function(req, res, next) {
     dbClient.execute(SELECT_ALL_FROM_REPO_OWNERSHIP, [], {prepare: true}, function(err, result) {
         if (err) {
-            logger.debug('error ' + JSON.stringify(err));
+            logger.error('error ' + JSON.stringify(err));
             res.status(500).end();
             return;
         }
@@ -81,7 +81,7 @@ router.get('/users', function(req, res, next) {
 router.get('/repos/orgs', function(req, res, next) {
 	dbClient.execute(SELECT_ALL_FROM_REPO_ORGS, [], {prepare: true}, function(err, result) {
 		if (err) {
-            logger.debug('error ' + JSON.stringify(err));
+            logger.error('error ' + JSON.stringify(err));
 			res.status(500).end();
 			return;
 		}

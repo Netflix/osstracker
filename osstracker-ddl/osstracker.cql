@@ -1,8 +1,8 @@
-DROP KEYSPACE osstracker;
+DROP KEYSPACE IF EXISTS osstracker;
 
 CREATE KEYSPACE osstracker WITH replication = {
-  'class': 'NetworkTopologyStrategy',
-  'us-east': '3'
+  'class': 'SimpleStrategy',
+  'replication_factor': 3
 };
 
 USE osstracker;

@@ -1,0 +1,85 @@
+# This compose file will start up Netflix OSS Tracker and load it with a days worth of data
+#
+# You need to export a variable before running it with your github key
+#   export github_oauth=YOUR_KEY_HERE
+#
+version: '2'
+services:
+  cassandra:
+    container_name: osstracker-cassandra
+    image: cassandra:latest
+    ports:
+      - "9042:9042"
+
+  elasticsearch:
+    container_name: osstracker-elasticsearch
+    image: elasticsearch:latest
+    ports:
+      - "9200:9200"
+
+  osstracker-console:
+    container_name: osstracker-console
+    image: netflixoss/osstracker-console:latest
+    ports:
+      - "3000:3000"
+    environment:
+      CASS_HOST: cassandra
+      CASS_PORT: 9042
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+    depends_on:
+      - cassandra
+      - elasticsearch
+
+  cassandra-load-keyspace:
+    container_name: osstracker-cassandra-load-keyspace
+    image: cassandra:latest
+    depends_on:
+      - cassandra
+    volumes:
+      - ./osstracker-ddl/osstracker.cql:/osstracker.cql
+    command: /bin/bash -c "sleep 60 && echo loading cassandra keyspace && cqlsh cassandra -f /osstracker.cql"
+
+  elasticsearch-configure-index-1:
+    container_name: osstracker-elasticsearch-configure-index-1
+    image: tutum/curl
+    depends_on:
+      - elasticsearch
+    command: /bin/bash -c "sleep 60 && echo adding index && curl -X PUT elasticsearch:9200/osstracker"
+
+  elasticsearch-configure-index-2:
+    container_name: osstracker-elasticsearch-configure-index-2
+    image: tutum/curl
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./osstracker-ddl/elasticsearch-mappings.json:/elasticsearch-mappings.json
+    command: /bin/bash -c "sleep 80 && echo adding index && curl -X PUT -d @/elasticsearch-mappings.json elasticsearch:9200/osstracker/repo_stats/_mapping"
+
+  osstracker-scraper-cassandra:
+    container_name: osstracker-scraper-cassandra
+    image:  netflixoss/osstracker-scraper:latest
+    depends_on:
+      - cassandra
+      - elasticsearch
+    environment:
+      CASS_HOST: cassandra
+      CASS_PORT: 9042
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+      github_oauth: ${github_oauth}
+    command: /bin/sh -c "sleep 100 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updatecassandra"
+
+  osstracker-scraper-elasticsearch:
+    container_name: osstracker-scraper-elasticsearch
+    image:  netflixoss/osstracker-scraper:latest
+    depends_on:
+      - cassandra
+      - elasticsearch
+    environment:
+      CASS_HOST: cassandra
+      CASS_PORT: 9042
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+      github_oauth: ${github_oauth}
+    command: /bin/sh -c "sleep 160 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updateelasticsearch"
