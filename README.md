@@ -20,7 +20,7 @@ metrics such as open issues and pull requests, days since last commit, and avera
 requests.
 
 OSS Tracker works by running multiple analysis jobs as part of osstracer-scraper periodically.  These jobs populate
-a project ownership database as well as a time series project statistics database.  OSS Tracker when exposes a web
+a project ownership database as well as a time series project statistics database.  OSS Tracker then exposes a web
 application (osstracker-console) that gives visibility into these databases as well as access to control ownership
 and categorization of each project.  In order to decrease the need for advanced visualization, much of the time series
 data graphing leverages kibana on top of elasticsearch.
