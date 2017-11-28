@@ -159,6 +159,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
   def getAllRepositoriesForOrg(githubOrg: String): List[GHRepository] = {
     val org = github.getOrganization(githubOrg)
     val githubRepos = org.listRepositories(100).asList().toList
+    logger.info(s"Found ${githubRepos.size} total repos for ${githubOrg}")
     githubRepos
   }
 

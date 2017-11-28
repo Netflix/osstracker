@@ -28,5 +28,4 @@ object Conf {
   val SENTINAL_DEV_LEAD_ID = "111111"; // Assign to valid emp id
   val SENTINAL_MGR_LEAD_ID = "222222"; // Assign to valid emp id
   val SENTINAL_ORG = "UNKNOWN"; // Assign to unknown org until edited in console
-  val GITHUB_ORG = "Netflix"
 }
