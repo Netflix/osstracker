@@ -1,12 +1,12 @@
 {
   "properties": {
     "repo_name": {
-      "type": "string",
-      "index": "not_analyzed"
+      "type": "keyword",
+      "index": "true"
     },
     "osslifecycle": {
-      "type": "string",
-      "index": "not_analyzed"
+      "type": "keyword",
+      "index": "true"
     }
   }
 }
