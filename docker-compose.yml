@@ -17,6 +17,12 @@ services:
     ports:
       - "9200:9200"
 
+  kibana:
+    container_name: osstracker-kibana
+    image: kibana:5.6.4
+    ports:
+      - "5601:5601"
+
   osstracker-console:
     container_name: osstracker-console
     image: netflixoss/osstracker-console:latest
