@@ -3,7 +3,7 @@
 # You need to export a variable before running it with your github key
 #   export github_oauth=YOUR_KEY_HERE
 #
-version: '2'
+version: '3'
 services:
   cassandra:
     container_name: osstracker-cassandra
