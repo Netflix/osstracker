@@ -100,8 +100,8 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
   // TODO: Is there a faster way to only pull the last commit?
   def getCommitInfo(repo: GHRepository) : CommitInfo = {
     val commits = repo.listCommits().asList()
-    val orderedCommits = commits.sortBy(_.getCommitShortInfo.getCommitter().getDate())
-    val lastCommitDate = orderedCommits(orderedCommits.length - 1).getCommitShortInfo().getCommitter().getDate()
+    val orderedCommits = commits.sortBy(_.getCommitShortInfo.getCommitDate())
+    val lastCommitDate = orderedCommits(orderedCommits.length - 1).getCommitShortInfo().getCommitDate()
     logger.debug(s"commits, first = ${orderedCommits(0).getSHA1}, last = ${orderedCommits(orderedCommits.length - 1).getSHA1()}")
     val daysSinceLastCommit = daysBetween(lastCommitDate, new Date())
     logger.debug(s"daysSinceLastCommit = ${daysSinceLastCommit}")
