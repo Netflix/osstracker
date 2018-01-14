@@ -28,11 +28,11 @@ task runScraper(type: JavaExec, dependsOn: classes) {
         "github_oauth" : "1111111111111111111111111111111111111111",
         "github_org" : "Netflix",
         // You should update with a a cassandra host and port
-        "CASS_HOST" : CASS_HOST,
-        "CASS_PORT" : "7104",
+        "CASS_HOST" : "localhost",
+        "CASS_PORT" : "9042",
         // You should update with an elasticsearch host and port
-        "ES_HOST" : ES_HOST,
-        "ES_PORT" : "7104"
+        "ES_HOST" : "localhost",
+        "ES_PORT" : "9200"
     ]
 
     jvmArgs = [
