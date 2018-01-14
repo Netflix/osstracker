@@ -74,6 +74,7 @@ services:
       ES_HOST: elasticsearch
       ES_PORT: 9200
       github_oauth: ${github_oauth}
+      github_org: ${github_org}
     command: /bin/sh -c "sleep 100 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updatecassandra"
 
   osstracker-scraper-elasticsearch:
@@ -88,4 +89,5 @@ services:
       ES_HOST: elasticsearch
       ES_PORT: 9200
       github_oauth: ${github_oauth}
+      github_org: ${github_org}
     command: /bin/sh -c "sleep 160 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updateelasticsearch"

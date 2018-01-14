@@ -24,8 +24,9 @@ task runScraper(type: JavaExec, dependsOn: classes) {
     main = 'com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper'
 
     environment = [
-        // You should update with your github OAUTH token
+        // You should update with your github OAUTH token and org
         "github_oauth" : "1111111111111111111111111111111111111111",
+        "github_org" : "Netflix",
         // You should update with a a cassandra host and port
         "CASS_HOST" : CASS_HOST,
         "CASS_PORT" : "7104",
