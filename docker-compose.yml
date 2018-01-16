@@ -57,6 +57,12 @@ services:
     volumes:
       - ./osstracker-ddl/osstracker.cql:/osstracker.cql
     command: /bin/bash -c "sleep 60 && echo loading cassandra keyspace && cqlsh cassandra -f /osstracker.cql"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   elasticsearch-configure-index-1:
     container_name: osstracker-elasticsearch-configure-index-1
@@ -64,6 +70,12 @@ services:
     depends_on:
       - elasticsearch
     command: /bin/bash -c "sleep 60 && echo adding index && curl -X PUT elasticsearch:9200/osstracker"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   elasticsearch-configure-index-2:
     container_name: osstracker-elasticsearch-configure-index-2
@@ -73,6 +85,12 @@ services:
     volumes:
       - ./osstracker-ddl/elasticsearch-mappings.json:/elasticsearch-mappings.json
     command: /bin/bash -c "sleep 80 && echo adding index && curl -X PUT -d @/elasticsearch-mappings.json elasticsearch:9200/osstracker/repo_stats/_mapping"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   osstracker-scraper-cassandra:
     container_name: osstracker-scraper-cassandra
