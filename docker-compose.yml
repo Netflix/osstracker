@@ -14,6 +14,7 @@ services:
     environment:
       - "MAX_HEAP_SIZE=256M"
       - "HEAP_NEWSIZE=128M"
+    restart: always
 
   elasticsearch:
     container_name: osstracker-elasticsearch
@@ -24,6 +25,7 @@ services:
       - "9200:9200"
     environment:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    restart: always
     ulimits:
       memlock:
         soft: -1
@@ -34,6 +36,7 @@ services:
     image: kibana:5.6.4
     ports:
       - "5601:5601"
+    restart: always
 
   osstracker-console:
     container_name: osstracker-console
@@ -45,6 +48,7 @@ services:
       CASS_PORT: 9042
       ES_HOST: elasticsearch
       ES_PORT: 9200
+    restart: always
     depends_on:
       - cassandra
       - elasticsearch
@@ -105,6 +109,7 @@ services:
       ES_PORT: 9200
       github_oauth: ${github_oauth}
       github_org: ${github_org}
+    restart: always
     command: /bin/sh -c "sleep 100 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updatecassandra"
 
   osstracker-scraper-elasticsearch:
@@ -120,4 +125,5 @@ services:
       ES_PORT: 9200
       github_oauth: ${github_oauth}
       github_org: ${github_org}
+    restart: always
     command: /bin/sh -c "sleep 160 && java -cp /osstracker-scraperapp-all.jar com.netflix.oss.tools.osstrackerscraper.app.RunGithubScraper --action updateelasticsearch"
