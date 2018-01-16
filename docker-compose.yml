@@ -15,6 +15,8 @@ services:
       - "MAX_HEAP_SIZE=256M"
       - "HEAP_NEWSIZE=128M"
     restart: always
+    volumes:
+      - ./cassandra_data:/var/lib/cassandra
 
   elasticsearch:
     container_name: osstracker-elasticsearch
@@ -30,6 +32,8 @@ services:
       memlock:
         soft: -1
         hard: -1
+    volumes:
+      - ./es_data:/usr/share/elasticsearch/data
 
   kibana:
     container_name: osstracker-kibana
