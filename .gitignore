@@ -6,3 +6,4 @@ build/
 *.ipr
 .idea/
 osstracker-scrapernetflixapp
+out/
