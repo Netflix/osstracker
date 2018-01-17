@@ -1,0 +1,9 @@
+- src: https://github.com/angstwad/docker.ubuntu
+  #version: "v1.0.1"
+  name: angstwad.docker_ubuntu
+
+- src: https://github.com/Bessonov/ansible-role-docker-compose
+  #version: "v1.0.1"
+  name: Bessonov.docker-compose
+
+- name: tersmitten.locales
