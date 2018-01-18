@@ -1,4 +1,15 @@
 $(document).ready(function(){
+  var settings;
+  var kibanaUrl = "/#/dashboard/OSSTracker-Overall-Stats?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-7d,mode:quick,to:now))";
+
+  $.getJSON("/js/settings.json", function(json) {
+    settings = json;
+    $.get('/hosts/eshost', function(data) {
+      var hrefLink = 'http://' + data + ':' + settings.kibanaPort + kibanaUrl
+      $("a[href='http://replaceme']").attr('href', hrefLink)
+    });
+  });
+
   $.get('/repos/overview', function(data) {
     $('#avgStarsText').text(data.avgStars);
     $('#avgForksText').text(data.avgForks);
@@ -11,8 +22,5 @@ $(document).ready(function(){
     $('#totalOpenPRsCountText').text(data.pullRequests.totalOpenCount);
     $('#totalClosedPRsCountText').text(data.pullRequests.totalClosedCount);
   });
-  $.get('/hosts/eshost', function(data) {
-      var hrefLink = 'http://' + data + ':5601/#/dashboard/OSSTracker-Overall-Stats?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-7d,mode:quick,to:now))'
-      $("a[href='http://replaceme']").attr('href', hrefLink)
-  });
+
 });
