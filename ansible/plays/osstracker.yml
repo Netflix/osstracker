@@ -1,0 +1,54 @@
+---
+
+- name: Base setup
+  hosts: osstracker
+  become: true
+  roles:
+    - tersmitten.locales
+  tasks:
+    - name: Run the equivalent of "apt-get update" as a separate step
+      apt:
+        update_cache: yes
+    - name: Install unattended-upgrades for security updates
+      apt:
+        pkg: unattended-upgrades
+        state: present
+# UNCOMMENT BELOW IF YOU WANT AUTOMATED REBOOTS
+#    - name: Install update-notifier-common for automated reboots
+#      apt:
+#        pkg: update-notifier-common
+#        state: present
+#    - name: enable automatic reboots
+#      lineinfile:
+#        path: /etc/apt/apt.conf.d/50unattended-upgrades
+#        regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
+#        line: 'Unattended-Upgrade::Automatic-Reboot "true";'
+#    - name: enable automatic reboots at 2am
+#      lineinfile:
+#        path: /etc/apt/apt.conf.d/50unattended-upgrades
+#        regexp: '//Unattended-Upgrade::Automatic-Reboot-Time "02:00";'
+#        line: 'Unattended-Upgrade::Automatic-Reboot-Time "02:00";'
+
+- name: Install Docker
+  hosts: osstracker
+  become: true
+  roles:
+    - angstwad.docker_ubuntu
+
+- name: Install Docker Compose
+  hosts: osstracker
+  roles:
+    - Bessonov.docker-compose
+
+- name: Deploy OSSTracker
+  hosts: osstracker
+  become: true
+  tasks:
+    - copy:
+        src: ../../docker-compose.yml
+        dest: /opt/osstracker/
+        mode: 0644
+    - copy:
+        src: ../../osstracker-ddl
+        dest: /opt/osstracker/
+        mode: 0644
