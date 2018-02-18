@@ -29,6 +29,9 @@ More Info
 =========
 You can see more about OSS Tracker from our meetup [video](https://www.youtube.com/watch?v=5s-SS_aXoi0) and [slides](http://www.slideshare.net/aspyker/netflix-open-source-meetup-season-4-episode-1).
 
+Deployment
+==========
+For a sample deployment of the OSS Tracker using Terraform + Ansible, you can refer to [this project](https://github.com/RestComm/netflix-oss-tracker-infra).
 
 [![Apache 2.0](https://img.shields.io/github/license/Netflix/osstracker.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
