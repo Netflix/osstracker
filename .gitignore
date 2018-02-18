@@ -6,3 +6,5 @@ build/
 *.ipr
 .idea/
 osstracker-scrapernetflixapp
+cassandra_data
+es_data

@@ -19,6 +19,7 @@ import org.rogach.scallop.ScallopConf
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   val action = opt[String](required = true)
+  verify()
 }
 
 object Conf {

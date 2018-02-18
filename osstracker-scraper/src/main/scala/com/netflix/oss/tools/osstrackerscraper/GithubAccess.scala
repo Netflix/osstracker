@@ -20,17 +20,31 @@ import java.util.{Date, Properties}
 
 import com.netflix.oss.tools.osstrackerscraper.OssLifecycle.OssLifecycle
 import org.kohsuke.github._
-import org.slf4j.LoggerFactory
-import play.api.libs.json.{Json, JsObject}
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.{JsObject, Json}
+
 import scala.collection.JavaConversions._
 
 case class CommitInfo(numCommits: Int, daysSinceLastCommit: Int, contributorLogins: List[String]) {}
-case class IssuesInfo(val closedIssuesSize: Int, val openIssuesSize: Int, val avgIssues: Int) {}
+case class IssuesInfo(
+   val closedCount: Int,
+   val openCount: Int,
+   val avgDayToClose: Int,
+   val openCountWithNoLabels: Int,
+   val openCountWithLabelBug: Int,
+   val openCountWithLabelDuplicate: Int,
+   val openCountWithLabelEnhancement: Int,
+   val openCountWithLabelHelpWanted: Int,
+   val openCountWithLabelInvalid: Int,
+   val openCountWithLabelQuestion: Int,
+   val openCountWithLabelWontfix: Int,
+   val openCountReallyOpen: Int
+) {}
 case class PRsInfo(val closedPRsSize: Int, val avgPRs: Int) {}
 
-class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
+class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToGithub: Boolean) {
   val logger = LoggerFactory.getLogger(getClass)
-  val github: GitHub = GitHub.connect()
+  val github: Option[GitHub] = if (connectToGithub) Some(GitHub.connect()) else None
 
   def getOSSMetaDataOSSLifecycle(repo: GHRepository): OssLifecycle = {
     try {
@@ -61,7 +75,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
 
     val (commitInfo: CommitInfo, issuesInfo: IssuesInfo, prsInfo: PRsInfo) = if (neverPushed) {
       logger.warn("repo has never been pushed, so providing fake zero counts for issues and pull requests")
-      (CommitInfo(0, 0, List[String]()), IssuesInfo(0, 0, 0), PRsInfo(0, 0))
+      (CommitInfo(0, 0, List[String]()), IssuesInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), PRsInfo(0, 0))
     } else {
       val commitInfo = getCommitInfo(repo)
       val issuesInfo = getIssuesStats(repo)
@@ -79,9 +93,9 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       "stars" -> repo.getWatchers(),
       "numContributors" -> commitInfo.contributorLogins.size,
       "issues" -> Json.obj(
-        "openCount" -> issuesInfo.openIssuesSize,
-        "closedCount" -> issuesInfo.closedIssuesSize,
-        "avgTimeToCloseInDays" -> issuesInfo.avgIssues
+        "openCount" -> issuesInfo.openCount,
+        "closedCount" -> issuesInfo.closedCount,
+        "avgTimeToCloseInDays" -> issuesInfo.avgDayToClose
       ),
       "pullRequests" -> Json.obj(
         "openCount" -> openPullRequests.size(),
@@ -129,9 +143,19 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
     PRsInfo(closedPRs.size, avgPRs)
   }
 
-  def getIssuesStats(repo: GHRepository) : IssuesInfo = {
-    val closedIssues = repo.getIssues(GHIssueState.CLOSED).filter(_.getPullRequest == null)
-    val openIssues = repo.getIssues(GHIssueState.OPEN).filter(_.getPullRequest == null)
+  def getIssuesStats(repo: GHRepository): IssuesInfo = {
+    val closedIssues = repo.getIssues(GHIssueState.CLOSED).filter(_.getPullRequest == null).toArray
+    val openIssues = repo.getIssues(GHIssueState.OPEN).filter(_.getPullRequest == null).toArray
+    getIssuesStats(closedIssues, openIssues)
+  }
+
+  def getIssuesStats(closedIssues: Array[GHIssue], openIssues: Array[GHIssue]): IssuesInfo = {
+    val (openCountNoLabels, openCountWithLabelBug, openCountWithLabelDuplicate,
+      openCountWithLabelEnhancement, openCountWithLabelHelpWanted,
+      openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
+      openCountReallyOpen) = getIssuesLabelStats(openIssues)
+
+
     val timeToCloseIssue = closedIssues.map(issue => {
       val opened = issue.getCreatedAt()
       val closed = issue.getClosedAt()
@@ -139,12 +163,75 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
       difference
     })
     val sumIssues = timeToCloseIssue.sum
-    val avgIssues = timeToCloseIssue.size match {
+    val avgDaysToCloseIssues = timeToCloseIssue.size match {
       case 0 => 0
       case _ => sumIssues / timeToCloseIssue.size
     }
-    logger.debug(s"avg days to close ${closedIssues.size()} issues = ${avgIssues} days")
-    IssuesInfo(closedIssues.size, openIssues.size, avgIssues)
+    logger.debug(s"avg days to close ${closedIssues.length} issues = ${avgDaysToCloseIssues} days")
+
+    IssuesInfo(closedIssues.size, openIssues.size, avgDaysToCloseIssues, openCountNoLabels, openCountWithLabelBug,
+      openCountWithLabelDuplicate, openCountWithLabelEnhancement,
+      openCountWithLabelHelpWanted, openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
+      openCountReallyOpen)
+  }
+
+  def getIssuesLabelStats(openIssues: Array[GHIssue]): (Int, Int, Int, Int, Int, Int, Int, Int, Int) = {
+    val openCountNoLabels = openIssues.count(issue => issue.getLabels.size() == 0)
+    // standard labels that count
+    val openCountWithLabelBug = countLabelForIssues(openIssues, "bug")
+    val openCountWithLabelHelpWanted = countLabelForIssues(openIssues, "help wanted")
+    val openCountWithLabelQuestion = countLabelForIssues(openIssues, "question")
+    // standard labels that dont' count
+    val openCountWithLabelDuplicate = countLabelForIssues(openIssues, "duplicate")
+    val openCountWithLabelEnhancement = countLabelForIssues(openIssues, "enhancement")
+    val openCountWithLabelInvalid = countLabelForIssues(openIssues, "invalid")
+    val openCountWithLabelWontfix = countLabelForIssues(openIssues, "wontfix")
+    val openCountReallyOpen = countReallyOpenIssues(openIssues)
+    (
+      openCountNoLabels, openCountWithLabelBug, openCountWithLabelDuplicate,
+      openCountWithLabelEnhancement, openCountWithLabelHelpWanted,
+      openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
+      openCountReallyOpen)
+  }
+
+  def countReallyOpenIssues(issues: Array[GHIssue]): Int = {
+    // note that some issues will have bug and enhancement, we need to honor the worst case label (bug)
+    // note that some issues will have bug and invalid, we don't want to double count
+    // so, if no label, count it
+    // for single labels
+    //    if (bug || help wanted || question) count it
+    //    if (duplicate || enhancement || invalid || wont fix) don't count it
+    // for multiple labels
+    //    if (bug || help wanted || question) count it
+    //    if no standard github labels count it
+    val count: Int = issues.count(issue => {
+      val labels = issue.getLabels.toList
+      val shouldCount = if (labels.size == 0) true else {
+        val standardCounts = hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question")
+        val doesNotHaveSomeStandardLabels = !hasSomeStandardGithubLabels(labels)
+        standardCounts || doesNotHaveSomeStandardLabels
+      }
+      logger.debug(s"issue ${issue.getNumber} counts = ${shouldCount}, labels = ${labels.map{_.getName}}")
+      shouldCount
+    })
+    count
+  }
+
+  def hasSomeStandardGithubLabels(labels: List[GHLabel]): Boolean = {
+    hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question") ||
+      hasLabelOfName(labels, "duplicate") || hasLabelOfName(labels, "enhancement") || hasLabelOfName(labels, "invalid") || hasLabelOfName(labels, "wontfix")
+  }
+
+  def hasLabelOfName(labels: List[GHLabel], name: String): Boolean = {
+    !labels.find(_.getName == name).isEmpty
+  }
+
+  def countLabelForIssues(issues: Array[GHIssue], label: String): Int = {
+    val openCountWithLabelBug: Int = issues.count(issue =>
+      issue.getLabels.size() != 0 &&
+        !issue.getLabels.find(_.getName == label).isEmpty
+    )
+    openCountWithLabelBug
   }
 
   def daysBetween(smaller: Date, bigger: Date): Int = {
@@ -153,11 +240,11 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String) {
   }
 
   def getRemainingHourlyRate(): Int = {
-    github.getRateLimit.remaining
+    github.get.getRateLimit.remaining
   }
 
   def getAllRepositoriesForOrg(githubOrg: String): List[GHRepository] = {
-    val org = github.getOrganization(githubOrg)
+    val org = github.get.getOrganization(githubOrg)
     val githubRepos = org.listRepositories(100).asList().toList
     logger.info(s"Found ${githubRepos.size} total repos for ${githubOrg}")
     githubRepos

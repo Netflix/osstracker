@@ -4,13 +4,14 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile 'org.scala-lang:scala-library:2.11.7'
+    compile 'org.scala-lang:scala-library:2.12.4'
     compile 'org.slf4j:slf4j-api:1.7.13'
     compile 'org.slf4j:slf4j-log4j12:1.7.13'
     compile 'org.kohsuke:github-api:1.92'
-    compile 'com.typesafe.play:play-json_2.11:2.4.5'
+    compile 'com.typesafe.play:play-json_2.12:2.6.8'
     compile 'joda-time:joda-time:2.9.1'
-    compile 'org.rogach:scallop_2.11:0.9.5'
+    compile 'org.rogach:scallop_2.12:3.1.1'
     compile 'com.datastax.cassandra:cassandra-driver-core:3.0.0'
     compile 'org.apache.httpcomponents:httpclient:4.5.1'
+    testCompile 'org.scalatest:scalatest_2.12:3.0.4'
 }
