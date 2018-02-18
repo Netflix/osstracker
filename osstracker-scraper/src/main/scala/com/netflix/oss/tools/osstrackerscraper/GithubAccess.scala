@@ -94,6 +94,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
       "numContributors" -> commitInfo.contributorLogins.size,
       "issues" -> Json.obj(
         "openCount" -> issuesInfo.openCount,
+        "reallyOpenCount" -> issuesInfo.openCountReallyOpen,
         "closedCount" -> issuesInfo.closedCount,
         "avgTimeToCloseInDays" -> issuesInfo.avgDayToClose
       ),
@@ -206,21 +207,65 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
     //    if no standard github labels count it
     val count: Int = issues.count(issue => {
       val labels = issue.getLabels.toList
-      val shouldCount = if (labels.size == 0) true else {
-        val standardCounts = hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question")
-        val doesNotHaveSomeStandardLabels = !hasSomeStandardGithubLabels(labels)
-        standardCounts || doesNotHaveSomeStandardLabels
+
+      val shouldCount = if (labels.size == 0) {
+        true // no labels so counts
+      } else {
+        if (hasBugOrQuestionLabel(labels)) {
+          true // has bug or question, so counts
+        }
+        else if (hasInvalidOrWontFix(labels)) {
+          false // has invalid or wontfix, so doesn't count
+        }
+        else {
+          val duplicate = hasLabelOfName(labels, "duplicate")
+          val enhancement = hasLabelOfName(labels, "enhancement")
+          val helpwanted = hasLabelOfName(labels, "helpwanted")
+          // by this point bug and question and invalid and wontfix = false
+          val computed = (duplicate, enhancement, helpwanted) match {
+            case (false, false, false) => true // no labels except custom labels
+            case (false, false, true) => true // help wanted and [custom labels]
+            case (false, true, false) => false // enhancement and [custom labels]
+            case (false, true, true) => false // enhancement and helpwanted and [custom labels]
+            case (true, false, false) => true // duplicate and [custom labels]
+            case (true, false, true) => true // duplicate and helpwanted and [custom labels]
+            case (true, true, false) => false // duplicate and enhancement and [custom labels]
+            case (true, true, true) => false // duplicate, enhancement, help wanted and [custom labels]
+          }
+          computed
+        }
       }
+
+
+//      val shouldCount = if (labels.size == 0) true else {
+//        // TODO: this doesn't work for enhancement&&help wanted (counts it, but shouldn't)
+//        val standardCounts = hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question")
+//        val helpWantedAndEnhancement = hasLabelOfName(labels, "help wanted") && hasLabelOfName(labels, "enhancement")
+//        val doesNotHaveSomeStandardLabels = !hasSomeStandardGithubLabels(labels)
+//        standardCounts || doesNotHaveSomeStandardLabels
+//      }
       logger.debug(s"issue ${issue.getNumber} counts = ${shouldCount}, labels = ${labels.map{_.getName}}")
       shouldCount
     })
     count
   }
 
-  def hasSomeStandardGithubLabels(labels: List[GHLabel]): Boolean = {
-    hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question") ||
-      hasLabelOfName(labels, "duplicate") || hasLabelOfName(labels, "enhancement") || hasLabelOfName(labels, "invalid") || hasLabelOfName(labels, "wontfix")
+  // Issues with these labels ALWAYS count
+  def hasBugOrQuestionLabel(labels: List[GHLabel]): Boolean = {
+    // Future: Eventually we can let custom labels be configured per scraper or per project (OSSMETADATA)
+    hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "question")
   }
+
+  // Issues with these labels will never count as long as not Bug or Question
+  def hasInvalidOrWontFix(labels: List[GHLabel]): Boolean = {
+    // Future: Eventually we can let custom labels be configured per scraper or per project (OSSMETADATA)
+    hasLabelOfName(labels, "invalid") || hasLabelOfName(labels, "wontfix")
+  }
+
+//  def hasSomeStandardGithubLabels(labels: List[GHLabel]): Boolean = {
+//    hasLabelOfName(labels, "bug") || hasLabelOfName(labels, "help wanted") || hasLabelOfName(labels, "question") ||
+//      hasLabelOfName(labels, "duplicate") || hasLabelOfName(labels, "enhancement") || hasLabelOfName(labels, "invalid") || hasLabelOfName(labels, "wontfix")
+//  }
 
   def hasLabelOfName(labels: List[GHLabel], name: String): Boolean = {
     !labels.find(_.getName == name).isEmpty

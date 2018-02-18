@@ -5,6 +5,7 @@ build/
 *.iws
 *.ipr
 .idea/
+*/out
 osstracker-scrapernetflixapp
 cassandra_data
 es_data
