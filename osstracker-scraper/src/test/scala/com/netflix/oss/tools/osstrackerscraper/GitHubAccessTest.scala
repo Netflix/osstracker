@@ -20,12 +20,12 @@ class GitHubAccessTest extends FunSuite {
     val access = new GithubAccess("a", "a", false)
 
     val stats = access.getIssuesStats(new Array[GHIssue](0), issues)
-    assert(stats.openCountReallyOpen == 23)
+    assert(stats.openCountTrulyOpen == 23)
 
     val issuesJSON2 = scala.io.Source.fromResource("hollow-issues.json").mkString
     val issues2 = mapper.readValue(issuesJSON2, classOf[Array[GHIssue]])
 
     val stats2 = access.getIssuesStats(new Array[GHIssue](0), issues2)
-    assert(stats2.openCountReallyOpen == 13)
+    assert(stats2.openCountTrulyOpen == 13)
   }
 }

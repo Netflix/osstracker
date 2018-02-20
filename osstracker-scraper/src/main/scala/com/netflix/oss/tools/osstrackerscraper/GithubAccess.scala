@@ -38,7 +38,7 @@ case class IssuesInfo(
    val openCountWithLabelInvalid: Int,
    val openCountWithLabelQuestion: Int,
    val openCountWithLabelWontfix: Int,
-   val openCountReallyOpen: Int
+   val openCountTrulyOpen: Int
 ) {}
 case class PRsInfo(val closedPRsSize: Int, val avgPRs: Int) {}
 
@@ -94,9 +94,18 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
       "numContributors" -> commitInfo.contributorLogins.size,
       "issues" -> Json.obj(
         "openCount" -> issuesInfo.openCount,
-        "reallyOpenCount" -> issuesInfo.openCountReallyOpen,
+        "openCountOnlyIssues" -> issuesInfo.openCountTrulyOpen,
         "closedCount" -> issuesInfo.closedCount,
-        "avgTimeToCloseInDays" -> issuesInfo.avgDayToClose
+        "avgTimeToCloseInDays" -> issuesInfo.avgDayToClose,
+        "openCountByStandardTags" -> Json.obj(
+          "bug" -> issuesInfo.openCountWithLabelBug,
+          "helpWanted" -> issuesInfo.openCountWithLabelHelpWanted,
+          "question" -> issuesInfo.openCountWithLabelQuestion,
+          "duplicate" -> issuesInfo.openCountWithLabelDuplicate,
+          "enhancement" -> issuesInfo.openCountWithLabelEnhancement,
+          "invalid" -> issuesInfo.openCountWithLabelInvalid,
+          "wontfix" -> issuesInfo.openCountWithLabelWontfix
+        ),
       ),
       "pullRequests" -> Json.obj(
         "openCount" -> openPullRequests.size(),
@@ -154,7 +163,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
     val (openCountNoLabels, openCountWithLabelBug, openCountWithLabelDuplicate,
       openCountWithLabelEnhancement, openCountWithLabelHelpWanted,
       openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
-      openCountReallyOpen) = getIssuesLabelStats(openIssues)
+      openCountTrulyOpen) = getIssuesLabelStats(openIssues)
 
 
     val timeToCloseIssue = closedIssues.map(issue => {
@@ -173,7 +182,7 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
     IssuesInfo(closedIssues.size, openIssues.size, avgDaysToCloseIssues, openCountNoLabels, openCountWithLabelBug,
       openCountWithLabelDuplicate, openCountWithLabelEnhancement,
       openCountWithLabelHelpWanted, openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
-      openCountReallyOpen)
+      openCountTrulyOpen)
   }
 
   def getIssuesLabelStats(openIssues: Array[GHIssue]): (Int, Int, Int, Int, Int, Int, Int, Int, Int) = {
@@ -187,15 +196,15 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
     val openCountWithLabelEnhancement = countLabelForIssues(openIssues, "enhancement")
     val openCountWithLabelInvalid = countLabelForIssues(openIssues, "invalid")
     val openCountWithLabelWontfix = countLabelForIssues(openIssues, "wontfix")
-    val openCountReallyOpen = countReallyOpenIssues(openIssues)
+    val openCountTrulyOpen = countLabelsForTrueIssues(openIssues)
     (
       openCountNoLabels, openCountWithLabelBug, openCountWithLabelDuplicate,
       openCountWithLabelEnhancement, openCountWithLabelHelpWanted,
       openCountWithLabelInvalid, openCountWithLabelQuestion, openCountWithLabelWontfix,
-      openCountReallyOpen)
+      openCountTrulyOpen)
   }
 
-  def countReallyOpenIssues(issues: Array[GHIssue]): Int = {
+  def countLabelsForTrueIssues(issues: Array[GHIssue]): Int = {
     // note that some issues will have bug and enhancement, we need to honor the worst case label (bug)
     // note that some issues will have bug and invalid, we don't want to double count
     // so, if no label, count it
