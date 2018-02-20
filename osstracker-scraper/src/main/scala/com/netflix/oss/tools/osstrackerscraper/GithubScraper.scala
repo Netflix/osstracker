@@ -36,7 +36,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
   def updateElasticSearch(): Boolean = {
     val es = new ElasticSearchAccess(esHost, esPort)
     val cass = new CassandraAccesss(cassHost, cassPort)
-    val github = new GithubAccess(asOfYYYYMMDD, asOfISO)
+    val github = new GithubAccess(asOfYYYYMMDD, asOfISO, true)
 
     try {
       println(Console.RED + s"remaining calls ${github.getRemainingHourlyRate()}" + Console.RESET)
@@ -154,7 +154,7 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
 
   def updateCassandra(): Boolean = {
     val cass = new CassandraAccesss(cassHost, cassPort)
-    val github = new GithubAccess(asOfYYYYMMDD, asOfISO)
+    val github = new GithubAccess(asOfYYYYMMDD, asOfISO, true)
     val report = StringBuilder.newBuilder
 
     report.append(s"OSSTracker Report for ${asOfYYYYMMDD}\n\n")
