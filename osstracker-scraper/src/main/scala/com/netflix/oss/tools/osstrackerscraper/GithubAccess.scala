@@ -56,6 +56,11 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
       OssLifecycleParser.getOssLifecycle(osslc)
     }
     catch {
+      case fnfe: java.io.FileNotFoundException => {
+        //simply don't have OSSMETADATA file in project. no need to flood logs with exceptions.
+        logger.warn(s"OSSMETADATA file not found in repo: ${repo.getName}")
+        OssLifecycle.Unknown
+      }
       case ioe: IOException  => {
         ioe.printStackTrace()
         OssLifecycle.Unknown
