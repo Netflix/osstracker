@@ -18,10 +18,11 @@ package com.netflix.oss.tools.osstrackerscraper
 import java.io.IOException
 import java.util.{Date, Properties}
 
+import com.netflix.oss.tools.osstrackerscraper
 import com.netflix.oss.tools.osstrackerscraper.OssLifecycle.OssLifecycle
 import org.kohsuke.github._
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.{JsObject, Json}
+import org.slf4j.LoggerFactory
+import play.api.libs.json._
 
 import scala.collection.JavaConversions._
 
@@ -41,10 +42,16 @@ case class IssuesInfo(
    val openCountTrulyOpen: Int
 ) {}
 case class PRsInfo(val closedPRsSize: Int, val avgPRs: Int) {}
+case class AssetInfo(assetName: String, downloadsCount: Long) {}
+case class ReleaseInfo(releaseName: String, assets: JsArray){}
 
 class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToGithub: Boolean) {
+
   val logger = LoggerFactory.getLogger(getClass)
   val github: Option[GitHub] = if (connectToGithub) Some(GitHub.connect()) else None
+
+  implicit val releaseInfoWrites: OWrites[ReleaseInfo] = Json.writes[ReleaseInfo]
+  implicit val assetInfoWrites: OWrites[AssetInfo] = Json.writes[AssetInfo]
 
   def getOSSMetaDataOSSLifecycle(repo: GHRepository): OssLifecycle = {
     try {
@@ -120,6 +127,24 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
     logger.debug("repo json = " + repoJson)
     repoJson
   }
+
+  def getRepoDownloads(repo: GHRepository, public: Boolean, ossLifecycle: osstrackerscraper.OssLifecycle.Value): List[JsObject] = {
+    logger.info(s"Getting downloads for repo = ${repo.getName()}")
+
+    // Note that in this case, the github-api will crash on calls to listIssues with java.lang.Error
+    // https://github.com/kohsuke/github-api/issues/65
+    val neverPushed = getCloseEnoughForSameDates(repo.getCreatedAt, repo.getPushedAt)
+
+    val (releasesInfo: List[JsObject]) = if (neverPushed) {
+      logger.warn("repo has never been pushed, so providing fake zero counts for downloads")
+      List[JsObject]()
+    } else {
+      val relStats = getReleaseStats(repo)
+      relStats
+    }
+    releasesInfo
+  }
+
 
   // TODO: Is there a faster way to only pull the last commit?
   def getCommitInfo(repo: GHRepository) : CommitInfo = {
@@ -286,6 +311,40 @@ class GithubAccess(val asOfYYYYMMDD: String, val asOfISO: String, val connectToG
         !issue.getLabels.find(_.getName == label).isEmpty
     )
     openCountWithLabelBug
+  }
+
+  def getReleaseStats(repo: GHRepository) : List[JsObject] = {
+    val allReleases = repo.listReleases().asList()
+    var releaseStatistics = List[JsObject]()
+
+    var totalDownloadsToDate: Long = 0
+    allReleases.foreach(release => {
+
+      var assetsStatistics = List[AssetInfo]()
+      val assets = release.getAssets
+      assets.foreach(
+         asset =>{
+           assetsStatistics = AssetInfo(asset.getName, asset.getDownloadCount) :: assetsStatistics
+           totalDownloadsToDate += asset.getDownloadCount
+         }
+       )
+
+      val releaseDownloadsJson: JsObject = Json.obj(
+        "asOfISO" -> asOfISO,
+        "asOfYYYYMMDD" -> asOfYYYYMMDD,
+        "repo_name" -> repo.getName(),
+        "release_name" -> release.getName,
+        "assets" -> assetsStatistics,
+        "total_downloads_to_date" -> totalDownloadsToDate
+      )
+      logger.debug("repo downloads json = " + releaseDownloadsJson)
+
+
+      releaseStatistics = releaseDownloadsJson :: releaseStatistics
+    })
+
+
+    releaseStatistics
   }
 
   def daysBetween(smaller: Date, bigger: Date): Int = {
