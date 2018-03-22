@@ -79,9 +79,19 @@ class GithubScraper(githubOrg: String, cassHost: String, cassPort: Int, esHost: 
 
         if (alreadyExistsDoc.isEmpty) {
           val stat = github.getRepoStats(ghRepo, public, ossLifecycle)
-          val indexed = es.indexDocInES("/osstracker/repo_stats", stat.toString)
+          var indexed = es.indexDocInES("/osstracker/repo_stats", stat.toString)
           if (!indexed) {
             return false
+          } else {
+            val releaseStats = github.getRepoDownloads(ghRepo, public, ossLifecycle)
+
+            releaseStats.foreach( rel => {
+              indexed &= es.indexDocInES("/osstracker/repo_downloads", rel.toString)
+            })
+            if (!indexed) {
+              return false
+            }
+
           }
           docsList += stat
         }
